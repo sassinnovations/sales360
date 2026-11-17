@@ -1,0 +1,24 @@
+import { Notice, PageHeader } from "@/components/ui";
+import { PipelineBoard } from "@/components/pipeline-board";
+import { getCurrentUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
+import { pipelineBoard } from "@/lib/queries";
+import { q } from "@/lib/search";
+import { redirect } from "next/navigation";
+
+export const instant = false;
+
+export default async function PipelinePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const user = await getCurrentUser();
+  if (!canAccess(user.role, "pipeline")) redirect("/dashboard?notice=You do not have access to that area");
+  const columns = pipelineBoard(user);
+  const sp = await searchParams;
+  return (
+    <div className="stack">
+      <PageHeader eyebrow="Forecast view" title="Pipeline" />
+      <Notice text={q(sp.notice)} />
+      <p className="muted">Drag a card between open stages. Closed-won and closed-lost stay on the opportunity, where a reason or close date is required. Weighted totals use amount × probability.</p>
+      <PipelineBoard columns={columns} />
+    </div>
+  );
+}

@@ -2,6 +2,7 @@
   "name": "ai-sales360",
   "version": "0.1.0",
   "private": true,
+  "description": "AI Sales360 — multi-tenant CRM for B2B sales and IT staffing",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
