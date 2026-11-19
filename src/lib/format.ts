@@ -1,3 +1,13 @@
+export function compactMoney(amount: number | null | undefined, currency = "INR") {
+  if (amount == null || Number.isNaN(amount)) return "—";
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export function money(amount: number | null | undefined, currency = "INR") {
   if (amount == null || Number.isNaN(amount)) return "—";
   return new Intl.NumberFormat("en-IN", {

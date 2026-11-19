@@ -58,8 +58,9 @@ export async function login(_prev: ActionState, formData: FormData): Promise<Act
     await setAuthCookie(MFA, pending, 0.25);
     redirect("/login/mfa");
   }
-  const session = writeSession({ userId: user.id, kind: "session", hours: 12 });
-  await setAuthCookie(SESSION, session, 12);
+  const hours = formData.get("remember") === "on" ? 24 * 14 : 12;
+  const session = writeSession({ userId: user.id, kind: "session", hours });
+  await setAuthCookie(SESSION, session, hours);
   audit({ tenantId: user.tenantId, actorId: user.id, action: "login", recordType: "user", recordId: user.id, summary: "Signed in." });
   redirect("/dashboard");
 }

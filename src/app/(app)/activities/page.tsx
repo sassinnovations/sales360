@@ -19,14 +19,21 @@ export default async function ActivitiesPage({ searchParams }: { searchParams: P
   const rows = listActivities(user, { view, q: q(sp.q) });
   return (
     <div className="stack">
-      <PageHeader eyebrow="Workspace" title="Tasks and calendar" />
+      <PageHeader
+        title="Activities"
+        action={
+          canWrite(user.role, "activities") || canWrite(user.role, "tasks") ? (
+            <Link className="btn-primary" href={`/activities?view=${view}&new=1`}>+ Add activity</Link>
+          ) : null
+        }
+      />
       <Notice text={q(sp.notice)} />
       <nav className="tabs">
         {[["open", "Open"], ["today", "Due soon"], ["overdue", "Overdue"], ["completed", "Completed"]].map(([id, label]) => (
           <Link key={id} className={view === id ? "on" : ""} href={`/activities?view=${id}`}>{label}</Link>
         ))}
       </nav>
-      {canWrite(user.role, "activities") || canWrite(user.role, "tasks") ? (
+      {q(sp.new) === "1" && (canWrite(user.role, "activities") || canWrite(user.role, "tasks")) ? (
         <EntityForm
           action={saveActivity}
           submitLabel="Add activity"

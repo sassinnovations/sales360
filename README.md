@@ -12,7 +12,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The first sign-in creates `data/sales360.db` and loads the Northstar Systems demo.
 
-Demo password for every seeded user: `Sales360!`
+Owner sign-in: `info@sassinnovations.com` / `Sass@2021`. Other seeded users use `Sales360!`.
 
 | Person | Role | Email |
 | --- | --- | --- |
@@ -22,6 +22,6 @@ Demo password for every seeded user: `Sales360!`
 | Maya Chen | Delivery | maya.chen@northstar.example |
 | Nora Khan | Finance | nora.khan@northstar.example |
 | Sam Patel | Auditor | sam.patel@northstar.example |
-| Priya Shah | Owner | priya.shah@northstar.example |
+| Priya Shah | Owner | info@sassinnovations.com |
 
 Delete `data/sales360.db` and restart to rebuild the demo. There is no external mail, model, or payment provider in this build. Reset codes and invitation links are shown in the app.

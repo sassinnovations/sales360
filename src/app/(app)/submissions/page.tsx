@@ -17,7 +17,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
   const rows = listSubmissions(user);
   return (
     <div className="stack">
-      <PageHeader eyebrow="Staffing" title="Submissions" />
+      <PageHeader title="Submissions" />
       <Notice text={q(sp.notice)} />
       {canWrite(user.role, "submissions") ? (
         <EntityForm

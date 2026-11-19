@@ -88,7 +88,7 @@ export function EntityForm({
             ) : field.type === "file" ? (
               <input name={field.name} type="file" accept={field.hint} />
             ) : (
-              <input name={field.name} type={field.type ?? "text"} value={values[field.name] ?? ""} onChange={() => undefined} />
+              <input name={field.name} type={field.type ?? "text"} required={field.required} value={values[field.name] ?? ""} onChange={() => undefined} />
             )}
             {state?.fieldErrors?.[field.name] ? <p className="err">{state.fieldErrors[field.name]}</p> : null}
           </label>

@@ -211,13 +211,87 @@ export function dashboard(user: SessionUser) {
         new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
       )
     : [];
+  const totalLeads = seeLeads
+    ? one<{ count: number }>(
+        `select count(*) as count from leads where ${leadWhere} and status != 'Archived'`,
+        user.tenantId,
+        ...sales.params,
+      )
+    : undefined;
+  const pipelineValue = seeOpps
+    ? one<{ total: number }>(
+        `select coalesce(sum(amount), 0) as total from opportunities where ${oppWhere} and status = 'open'`,
+        user.tenantId,
+        ...sales.params,
+      )
+    : undefined;
+  const wonCount = seeOpps
+    ? one<{ count: number }>(
+        `select count(*) as count from opportunities where ${oppWhere} and status = 'won'`,
+        user.tenantId,
+        ...sales.params,
+      )
+    : undefined;
+  const recentStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const priorStart = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  const trend = (table: "leads" | "opportunities", extra = "") => {
+    const recent = one<{ count: number }>(
+      `select count(*) as count from ${table} where tenant_id = ? and ${sales.sql} and created_at >= ? ${extra}`,
+      user.tenantId,
+      ...sales.params,
+      recentStart,
+    );
+    const prior = one<{ count: number }>(
+      `select count(*) as count from ${table} where tenant_id = ? and ${sales.sql} and created_at >= ? and created_at < ? ${extra}`,
+      user.tenantId,
+      ...sales.params,
+      priorStart,
+      recentStart,
+    );
+    const recentCount = Number(recent?.count ?? 0);
+    if (!recentCount) return null;
+    return changePct(recentCount, Number(prior?.count ?? 0));
+  };
+  const months = lastMonths(6);
+  const monthStart = `${months[0].key}-01`;
+  const leadByMonth = seeLeads
+    ? all<{ month: string; count: number }>(
+        `select substr(created_at, 1, 7) as month, count(*) as count from leads
+         where tenant_id = ? and ${sales.sql} and created_at >= ? group by month`,
+        user.tenantId,
+        ...sales.params,
+        monthStart,
+      )
+    : [];
+  const oppByMonth = seeOpps
+    ? all<{ month: string; count: number }>(
+        `select substr(created_at, 1, 7) as month, count(*) as count from opportunities
+         where tenant_id = ? and ${sales.sql} and created_at >= ? group by month`,
+        user.tenantId,
+        ...sales.params,
+        monthStart,
+      )
+    : [];
 
   return {
     openLeads: Number(openLeads?.count ?? 0),
+    totalLeads: Number(totalLeads?.count ?? 0),
     qualified: Number(qualified?.count ?? 0),
     openOpps: Number(openOpps?.count ?? 0),
     weighted: Number(weighted?.total ?? 0),
+    pipelineValue: Number(pipelineValue?.total ?? 0),
+    wonCount: Number(wonCount?.count ?? 0),
     won: Number(won?.total ?? 0),
+    trends: {
+      leads: seeLeads ? trend("leads", "and status != 'Archived'") : null,
+      opps: seeOpps ? trend("opportunities") : null,
+      wins: seeOpps ? trend("opportunities", "and status = 'won'") : null,
+    },
+    series: months.map((month) => ({
+      label: month.label,
+      leads: Number(leadByMonth.find((row) => row.month === month.key)?.count ?? 0),
+      opps: Number(oppByMonth.find((row) => row.month === month.key)?.count ?? 0),
+    })),
     openRequirements: Number(openRequirements?.count ?? 0),
     candidates: Number(candidates?.count ?? 0),
     openSubmissions: Number(openSubmissions?.count ?? 0),
@@ -239,6 +313,17 @@ function likeTerm(q?: string) {
   return `%${(q ?? "").trim().replace(/[%_]/g, "")}%`;
 }
 
+export function leadStatusCounts(user: SessionUser) {
+  const sales = ownSales(user, "owner_id");
+  return all<{ status: string; count: number }>(
+    `select status, count(*) as count from leads
+     where tenant_id = ? and ${sales.sql} and status != 'Archived'
+     group by status`,
+    user.tenantId,
+    ...sales.params,
+  );
+}
+
 export function listLeads(user: SessionUser, opts: ListOpts) {
   const sales = ownSales(user, "l.owner_id");
   const where = [`l.tenant_id = ?`, sales.sql];
@@ -250,9 +335,9 @@ export function listLeads(user: SessionUser, opts: ListOpts) {
     where.push("l.status not in ('Archived')");
   }
   if (opts.q) {
-    where.push("(l.name like ? or l.company like ? or l.email like ? or l.phone like ?)");
+    where.push("(l.name like ? or l.first_name like ? or l.last_name like ? or l.company like ? or l.email like ? or l.phone like ? or l.city like ? or l.linkedin_url like ?)");
     const term = likeTerm(opts.q);
-    params.push(term, term, term, term);
+    params.push(term, term, term, term, term, term, term, term);
   }
   const sort = opts.sort === "name" ? "l.name collate nocase" : opts.sort === "score" ? "l.score desc" : "l.created_at desc";
   const page = Math.max(1, opts.page || 1);
@@ -772,9 +857,12 @@ export function searchAll(user: SessionUser, q: string) {
   if (canAccess(user.role, "leads")) {
     const sales = ownSales(user, "owner_id");
     const leads = all<{ id: string; name: string | null; company: string | null; status: string }>(
-      `select id, name, company, status from leads where tenant_id = ? and ${sales.sql} and (name like ? or company like ? or email like ?)`,
+      `select id, name, company, status from leads where tenant_id = ? and ${sales.sql} and (name like ? or first_name like ? or last_name like ? or company like ? or email like ? or city like ?)`,
       user.tenantId,
       ...sales.params,
+      term,
+      term,
+      term,
       term,
       term,
       term,
@@ -912,6 +1000,40 @@ export function reports(user: SessionUser) {
     user.tenantId,
     ...sales.params,
   );
+  const months = lastMonths(8);
+  const monthStart = `${months[0].key}-01`;
+  const revenueRows = all<{ month: string; total: number }>(
+    `select substr(coalesce(closed_at, updated_at), 1, 7) as month, coalesce(sum(amount), 0) as total
+     from opportunities where tenant_id = ? and ${sales.sql} and status = 'won' and coalesce(closed_at, updated_at) >= ?
+     group by month`,
+    user.tenantId,
+    ...sales.params,
+    monthStart,
+  );
+  const sources = all<{ source: string; count: number }>(
+    `select coalesce(nullif(source, ''), 'Other') as source, count(*) as count
+     from opportunities where tenant_id = ? and ${sales.sql}
+     group by 1 order by 2 desc`,
+    user.tenantId,
+    ...sales.params,
+  );
+  const closedAmounts = one<{ wonAmount: number; lostAmount: number }>(
+    `select coalesce(sum(case when status = 'won' then amount else 0 end), 0) as won_amount,
+            coalesce(sum(case when status = 'lost' then amount else 0 end), 0) as lost_amount
+     from opportunities where tenant_id = ? and ${sales.sql} and status in ('won','lost')`,
+    user.tenantId,
+    ...sales.params,
+  );
+  const team = all<{ name: string; won: number; amount: number }>(
+    `select u.name as name, count(*) as won, coalesce(sum(o.amount), 0) as amount
+     from opportunities o join users u on u.id = o.owner_id
+     where o.tenant_id = ? and o.status = 'won' and ${sales.sql.split("owner_id").join("o.owner_id")}
+     group by u.id order by amount desc`,
+    user.tenantId,
+    ...sales.params,
+  );
+  const wonCount = Number(closed?.won ?? 0);
+  const wonAmount = Number(closedAmounts?.wonAmount ?? 0);
   return {
     leadConversion: ratio(Number(leads?.converted ?? 0), Number(leads?.total ?? 0)),
     winRate: ratio(Number(closed?.won ?? 0), Number(closed?.won ?? 0) + Number(closed?.lost ?? 0)),
@@ -922,6 +1044,17 @@ export function reports(user: SessionUser) {
     interviewToPlacement: interviewed ? ratio(placements, interviewed) : 0,
     placements,
     funnel,
+    wonAmount,
+    lostAmount: Number(closedAmounts?.lostAmount ?? 0),
+    wonCount,
+    lostCount: Number(closed?.lost ?? 0),
+    avgDeal: wonCount ? Math.round(wonAmount / wonCount) : 0,
+    revenue: months.map((month) => ({
+      label: month.label,
+      value: Number(revenueRows.find((row) => row.month === month.key)?.total ?? 0),
+    })),
+    sources,
+    team,
     definitions: [
       ["Lead conversion rate", "Converted leads divided by leads that are not archived."],
       ["Opportunity win rate", "Closed-won opportunities divided by all closed opportunities."],
@@ -938,6 +1071,23 @@ export function reports(user: SessionUser) {
 function ratio(part: number, whole: number) {
   if (!whole) return 0;
   return Math.round((part / whole) * 100);
+}
+
+function changePct(recent: number, prior: number) {
+  if (!prior) return recent ? 100 : 0;
+  return Math.round(((recent - prior) / prior) * 100);
+}
+
+function lastMonths(count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (count - 1 - index));
+    return {
+      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+      label: date.toLocaleString("en-US", { month: "short" }),
+    };
+  });
 }
 
 function maskRates(user: SessionUser, rows: unknown[]) {

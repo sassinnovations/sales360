@@ -13,7 +13,7 @@ export default async function PlacementsPage() {
   const rows = listPlacements(user);
   return (
     <div className="stack">
-      <PageHeader eyebrow="Delivery" title="Placements" />
+      <PageHeader title="Placements" />
       <div className="table-wrap">
         <table>
           <thead>

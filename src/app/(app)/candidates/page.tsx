@@ -19,7 +19,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
   const rates = canSeeCandidateRates(user.role);
   return (
     <div className="stack">
-      <PageHeader eyebrow="Staffing" title="Candidates" action={canWrite(user.role, "candidates") ? <Link className="btn-primary" href="/candidates?new=1">New candidate</Link> : null} />
+      <PageHeader title="Candidates" action={canWrite(user.role, "candidates") ? <Link className="btn-primary" href="/candidates?new=1">+ Add candidate</Link> : null} />
       <Notice text={q(sp.notice)} />
       <form className="card" action="/candidates">
         <input name="q" placeholder="Skills, name, or location" defaultValue={q(sp.q)} aria-label="Search candidates" />

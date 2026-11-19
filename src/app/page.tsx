@@ -5,8 +5,8 @@ export default function HomePage() {
     <main className="auth">
       <section className="auth-story">
         <div>
-          <p className="eyebrow" style={{ color: "#e7b15a" }}>Sass Innovations · AI Sales360</p>
-          <h1>One workspace for the deal, the requirement, and the next conversation.</h1>
+          <p className="eyebrow">Sass Innovations · AI Sales360</p>
+          <h1>AI-Powered CRM for Sales & Staffing</h1>
         </div>
         <p>B2B pipeline, staffing delivery, and an assistant that answers from records you are allowed to see.</p>
       </section>

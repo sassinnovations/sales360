@@ -23,20 +23,28 @@ export async function saveLead(_prev: ActionState, formData: FormData): Promise<
   const user = await getCurrentUser();
   if (!canWrite(user.role, "leads")) return { error: "You do not have access to edit leads." };
   const id = text(formData.get("id"));
-  const name = text(formData.get("name"));
+  const firstName = text(formData.get("firstName"));
+  const lastName = text(formData.get("lastName"));
+  const name = [firstName, lastName].filter(Boolean).join(" ");
   const company = text(formData.get("company"));
   const email = text(formData.get("email"));
   const phone = text(formData.get("phone"));
+  const linkedinUrl = text(formData.get("linkedinUrl"));
+  const city = text(formData.get("city"));
+  const region = text(formData.get("state"));
+  const country = text(formData.get("country"));
   const source = text(formData.get("source"));
   const status = text(formData.get("status")) || "New";
   const title = text(formData.get("title"));
   const ownerId = text(formData.get("ownerId")) || user.id;
   const notes = text(formData.get("notes"));
   const fields: Record<string, string> = {};
-  if (!name && !company) fieldError(fields, "name", "Enter a person or a company.");
-  if (!email && !phone) fieldError(fields, "email", "Add an email or a phone number.");
+  if (!firstName) fieldError(fields, "firstName", "Enter a first name.");
+  if (!lastName) fieldError(fields, "lastName", "Enter a last name.");
+  if (!email && !phone) fieldError(fields, "email", "Add an email or a mobile number.");
   if (email && !isEmail(email)) fieldError(fields, "email", "Enter a valid email address.");
-  if (phone && !isPhone(phone)) fieldError(fields, "phone", "Enter a valid phone number.");
+  if (phone && !isPhone(phone)) fieldError(fields, "phone", "Enter a valid mobile number.");
+  if (linkedinUrl && !isWebsite(linkedinUrl)) fieldError(fields, "linkedinUrl", "Enter a valid LinkedIn URL.");
   const sources = settingList(user.tenantId, "lead_sources", []);
   const statuses = ["New", "Working", "Qualified", "Unqualified", "Archived"];
   if (source && !sources.includes(source)) fieldError(fields, "source", "Choose a configured source.");
@@ -64,13 +72,19 @@ export async function saveLead(_prev: ActionState, formData: FormData): Promise<
     if (!existing || existing.status === "Converted") return { error: "That lead is not available to edit." };
     const ok = changed(
       run(
-        `update leads set name = ?, company = ?, title = ?, email = ?, phone = ?, source = ?, status = ?, owner_id = ?, notes = ?, score = ?, score_reasons = ?, score_updated_at = ?, updated_at = ?, version = version + 1
+        `update leads set name = ?, first_name = ?, last_name = ?, company = ?, title = ?, email = ?, phone = ?, linkedin_url = ?, city = ?, state = ?, country = ?, source = ?, status = ?, owner_id = ?, notes = ?, score = ?, score_reasons = ?, score_updated_at = ?, updated_at = ?, version = version + 1
          where id = ? and tenant_id = ? and version = ?`,
         name || null,
+        firstName || null,
+        lastName || null,
         company || null,
         title || null,
         email || null,
         phone || null,
+        linkedinUrl || null,
+        city || null,
+        region || null,
+        country || null,
         source || null,
         status,
         ownerId,
@@ -91,15 +105,21 @@ export async function saveLead(_prev: ActionState, formData: FormData): Promise<
   }
   const leadId = nid("ld");
   run(
-    `insert into leads (id, tenant_id, name, company, title, email, phone, source, status, owner_id, score, score_reasons, score_updated_at, notes, created_at, updated_at, version)
-     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `insert into leads (id, tenant_id, name, first_name, last_name, company, title, email, phone, linkedin_url, city, state, country, source, status, owner_id, score, score_reasons, score_updated_at, notes, created_at, updated_at, version)
+     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
     leadId,
     user.tenantId,
     name || null,
+    firstName || null,
+    lastName || null,
     company || null,
     title || null,
     email || null,
     phone || null,
+    linkedinUrl || null,
+    city || null,
+    region || null,
+    country || null,
     source || null,
     status,
     ownerId,

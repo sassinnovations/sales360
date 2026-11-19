@@ -23,6 +23,7 @@ export function seedIfEmpty(db: DatabaseSync) {
 
   const now = iso(0);
   const password = hashPassword("Sales360!");
+  const ownerPassword = hashPassword("Sass@2021");
   const insert = db.prepare.bind(db);
 
   const run = (sql: string, ...params: (string | number | null)[]) => {
@@ -51,7 +52,7 @@ export function seedIfEmpty(db: DatabaseSync) {
     );
 
     const people: [string, string, string, string, string, string, string][] = [
-      [PRIYA, "Priya Shah", "priya.shah@northstar.example", "owner", "Leadership", "Managing Director", "+91 98000 10001"],
+      [PRIYA, "Priya Shah", "info@sassinnovations.com", "owner", "Leadership", "Managing Director", "+91 98000 10001"],
       [ARUN, "Arun Mehta", "arun.mehta@northstar.example", "manager", "Sales", "Sales Manager", "+91 98000 10002"],
       [LEAH, "Leah Okonkwo", "leah.okonkwo@northstar.example", "bdm", "Sales", "Business Development Manager", "+91 98000 10003"],
       [ROHAN, "Rohan Iyer", "rohan.iyer@northstar.example", "recruiter", "Resourcing", "Lead Recruiter", "+91 98000 10004"],
@@ -67,7 +68,7 @@ export function seedIfEmpty(db: DatabaseSync) {
         TENANT,
         name,
         email,
-        password,
+        id === PRIYA ? ownerPassword : password,
         role,
         team,
         title,
@@ -177,11 +178,13 @@ export function seedIfEmpty(db: DatabaseSync) {
     ];
     for (const [id, name, company, title, email, phone, source, status, owner, score, reasons, notes] of leads) {
       run(
-        `insert into leads (id, tenant_id, name, company, title, email, phone, source, status, owner_id, score, score_reasons, score_updated_at, notes, account_id, contact_id, opportunity_id, converted_at, created_at, updated_at, version)
-         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        `insert into leads (id, tenant_id, name, first_name, last_name, company, title, email, phone, source, status, owner_id, score, score_reasons, score_updated_at, notes, account_id, contact_id, opportunity_id, converted_at, created_at, updated_at, version)
+         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         id,
         TENANT,
         name,
+        name.split(" ")[0],
+        name.split(" ").slice(1).join(" "),
         company,
         title,
         email,
