@@ -65,9 +65,7 @@ const TITLES: [string, string][] = [
 
 function current(pathname: string, href: string) {
   if (href === "/opportunities") return pathname.startsWith("/opportunities");
-  if (href === "/requirements") {
-    return ["/requirements", "/candidates", "/submissions", "/placements"].some((path) => pathname.startsWith(path));
-  }
+  if (href === "/requirements") return pathname.startsWith("/requirements");
   if (href === "/admin") return pathname === "/admin";
   if (href === "/admin/users") return pathname.startsWith("/admin/users");
   if (href === "/admin/workflows") return pathname.startsWith("/admin/workflows");
@@ -89,12 +87,6 @@ export function Shell({
   const pathname = usePathname();
   const title = TITLES.find(([href]) => pathname === href || pathname.startsWith(`${href}/`))?.[1] ?? "AI Sales360";
   const groups = [...new Set(nav.map((item) => item.group))];
-  const creates = [
-    nav.some((item) => item.href === "/leads") ? ["/leads?new=1", "New lead"] : null,
-    nav.some((item) => item.href === "/opportunities") ? ["/opportunities?new=1", "New opportunity"] : null,
-    nav.some((item) => item.href === "/requirements") ? ["/requirements?new=1", "New requirement"] : null,
-    nav.some((item) => item.href === "/activities") ? ["/activities?new=1", "New activity"] : null,
-  ].filter((item): item is [string, string] => item !== null);
 
   return (
     <div className="shell">
@@ -140,38 +132,40 @@ export function Shell({
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <button className="btn-ghost menu" type="button" onClick={() => setOpen((value) => !value)}>
-            Menu
-          </button>
-          <div className="top-title">{title}</div>
+          <div className="top-start">
+            <button className="btn-ghost menu" type="button" onClick={() => setOpen((value) => !value)}>
+              Menu
+            </button>
+            <div className="top-title">{title}</div>
+          </div>
           <form className="search" action="/search">
             <Icon name="search" />
             <input name="q" placeholder="Search anything..." aria-label="Search the workspace" />
           </form>
+          <div className="top-end">
+          <span className="range-chip">Last 30 days</span>
           <Link className="icon-btn" href="/notifications" aria-label={unread ? `${unread} unread alerts` : "Alerts"}>
             <Icon name="bell" />
             {unread ? <span className="badge">{unread}</span> : null}
           </Link>
-          <div className="userchip">
-            <div className="avatar">{initials(user.name)}</div>
-            <div>
-              <strong>{user.name}</strong>
-              <span>{roleLabel(user.role)}</span>
-            </div>
-          </div>
-          <span className="range-chip">Last 30 days</span>
-          {creates.length ? (
-            <details className="create">
-              <summary>+ Create</summary>
-              <div className="create-menu">
-                {creates.map(([href, label]) => (
-                  <Link key={href} href={href}>
-                    {label}
-                  </Link>
-                ))}
+          <details className="profile">
+            <summary className="userchip" aria-label="Profile">
+              <div className="avatar">{initials(user.name)}</div>
+              <div>
+                <strong>{user.name}</strong>
+                <span>{roleLabel(user.role)}</span>
               </div>
-            </details>
-          ) : null}
+            </summary>
+            <div className="profile-menu">
+              <strong>{user.name}</strong>
+              <span>{user.email}</span>
+              <span>{roleLabel(user.role)}</span>
+              <form action={logout}>
+                <button className="btn-ghost" type="submit">Sign out</button>
+              </form>
+            </div>
+          </details>
+          </div>
         </header>
         <div className="content">{children}</div>
       </div>

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EntityForm } from "@/components/entity-form";
-import { StaffingTabs } from "@/components/section-nav";
 import { Notice, PageHeader, Pill } from "@/components/ui";
 import { saveSubmission } from "@/lib/actions/staffing";
 import { getCurrentUser } from "@/lib/auth";
@@ -18,8 +17,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
   const rows = listSubmissions(user);
   return (
     <div className="stack">
-      <PageHeader title="IT Staffing" />
-      <StaffingTabs current="/submissions" />
+      <PageHeader title="Submissions" />
       <Notice text={q(sp.notice)} />
       {canWrite(user.role, "submissions") ? (
         <EntityForm

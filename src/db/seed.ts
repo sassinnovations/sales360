@@ -178,11 +178,13 @@ export function seedIfEmpty(db: DatabaseSync) {
     ];
     for (const [id, name, company, title, email, phone, source, status, owner, score, reasons, notes] of leads) {
       run(
-        `insert into leads (id, tenant_id, name, company, title, email, phone, source, status, owner_id, score, score_reasons, score_updated_at, notes, account_id, contact_id, opportunity_id, converted_at, created_at, updated_at, version)
-         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        `insert into leads (id, tenant_id, name, first_name, last_name, company, title, email, phone, source, status, owner_id, score, score_reasons, score_updated_at, notes, account_id, contact_id, opportunity_id, converted_at, created_at, updated_at, version)
+         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         id,
         TENANT,
         name,
+        name.split(" ")[0],
+        name.split(" ").slice(1).join(" "),
         company,
         title,
         email,

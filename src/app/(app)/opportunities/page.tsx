@@ -21,7 +21,15 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const contacts = listContacts(user, {});
   return (
     <div className="stack">
-      <PageHeader title="Opportunities" action={<BoardToggle current="list" />} />
+      <PageHeader
+        title="Opportunities"
+        action={
+          <div className="page-actions">
+            {canWrite(user.role, "opportunities") ? <Link className="btn-primary" href="/opportunities?new=1">+ New opportunity</Link> : null}
+            <BoardToggle current="list" />
+          </div>
+        }
+      />
       <Notice text={q(sp.notice)} />
       <form className="card" action="/opportunities" style={{ display: "flex", gap: 8 }}>
         <input name="q" placeholder="Search" defaultValue={q(sp.q)} aria-label="Search opportunities" />
@@ -52,7 +60,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             { name: "competitors", label: "Competitors", wide: true },
           ]}
         />
-      ) : canWrite(user.role, "opportunities") ? <Link href="/opportunities?new=1">New opportunity</Link> : null}
+      ) : null}
       <div className="table-wrap">
         <table>
           <thead><tr>{["Opportunity", "Account", "Stage", "Amount", "Weighted", "Close", "Owner"].map((item) => <th key={item}>{item}</th>)}</tr></thead>

@@ -79,8 +79,6 @@ export default async function DashboardPage() {
       ) : canAccess(user.role, "requirements") ? (
         <section className="grid kpis">
           <Link href="/requirements" className="card kpi"><div className="kpi-icon purple">◆</div><div className="kpi-copy"><span>Open requirements</span><strong>{data.openRequirements}</strong></div></Link>
-          <Link href="/candidates" className="card kpi"><div className="kpi-icon blue">▣</div><div className="kpi-copy"><span>Candidates</span><strong>{data.candidates}</strong></div></Link>
-          <Link href="/submissions" className="card kpi"><div className="kpi-icon teal">◈</div><div className="kpi-copy"><span>Open submissions</span><strong>{data.openSubmissions}</strong></div></Link>
           <article className="card kpi"><div className="kpi-icon green">✓</div><div className="kpi-copy"><span>Overdue tasks</span><strong>{data.overdue}</strong></div></article>
         </section>
       ) : (
@@ -135,8 +133,6 @@ export default async function DashboardPage() {
       {sales && canAccess(user.role, "requirements") ? (
         <section className="grid kpis">
           <Link href="/requirements" className="card kpi"><div className="kpi-copy"><span>Open requirements</span><strong>{data.openRequirements}</strong></div></Link>
-          <Link href="/candidates" className="card kpi"><div className="kpi-copy"><span>Candidates</span><strong>{data.candidates}</strong></div></Link>
-          <Link href="/submissions" className="card kpi"><div className="kpi-copy"><span>Open submissions</span><strong>{data.openSubmissions}</strong></div></Link>
           <article className="card kpi"><div className="kpi-copy"><span>Overdue tasks</span><strong>{data.overdue}</strong></div></article>
         </section>
       ) : null}

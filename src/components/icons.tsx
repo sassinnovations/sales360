@@ -8,6 +8,8 @@ export function Icon({ name }: { name: string }) {
     strokeWidth: 1.8,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
+    width: 18,
+    height: 18,
     "aria-hidden": true,
   };
   const paths: Record<string, ReactNode> = {

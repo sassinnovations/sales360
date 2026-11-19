@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EntityForm } from "@/components/entity-form";
-import { StaffingTabs } from "@/components/section-nav";
 import { Notice, PageHeader, Pill } from "@/components/ui";
 import { saveRequirement } from "@/lib/actions/staffing";
 import { getCurrentUser } from "@/lib/auth";
@@ -22,7 +21,6 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
   return (
     <div className="stack">
       <PageHeader title="IT Staffing" action={canWrite(user.role, "requirements") ? <Link className="btn-primary" href="/requirements?new=1">+ Add requirement</Link> : null} />
-      <StaffingTabs current="/requirements" />
       <Notice text={q(sp.notice)} />
       <form className="toolbar" action="/requirements">
         <input name="q" placeholder="Search requirements..." defaultValue={q(sp.q)} aria-label="Search requirements" />

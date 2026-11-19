@@ -335,9 +335,9 @@ export function listLeads(user: SessionUser, opts: ListOpts) {
     where.push("l.status not in ('Archived')");
   }
   if (opts.q) {
-    where.push("(l.name like ? or l.company like ? or l.email like ? or l.phone like ?)");
+    where.push("(l.name like ? or l.first_name like ? or l.last_name like ? or l.company like ? or l.email like ? or l.phone like ? or l.city like ? or l.linkedin_url like ?)");
     const term = likeTerm(opts.q);
-    params.push(term, term, term, term);
+    params.push(term, term, term, term, term, term, term, term);
   }
   const sort = opts.sort === "name" ? "l.name collate nocase" : opts.sort === "score" ? "l.score desc" : "l.created_at desc";
   const page = Math.max(1, opts.page || 1);
@@ -857,9 +857,12 @@ export function searchAll(user: SessionUser, q: string) {
   if (canAccess(user.role, "leads")) {
     const sales = ownSales(user, "owner_id");
     const leads = all<{ id: string; name: string | null; company: string | null; status: string }>(
-      `select id, name, company, status from leads where tenant_id = ? and ${sales.sql} and (name like ? or company like ? or email like ?)`,
+      `select id, name, company, status from leads where tenant_id = ? and ${sales.sql} and (name like ? or first_name like ? or last_name like ? or company like ? or email like ? or city like ?)`,
       user.tenantId,
       ...sales.params,
+      term,
+      term,
+      term,
       term,
       term,
       term,

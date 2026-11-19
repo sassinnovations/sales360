@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EntityForm } from "@/components/entity-form";
-import { StaffingTabs } from "@/components/section-nav";
 import { Notice, PageHeader } from "@/components/ui";
 import { saveCandidate } from "@/lib/actions/staffing";
 import { getCurrentUser } from "@/lib/auth";
@@ -20,8 +19,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
   const rates = canSeeCandidateRates(user.role);
   return (
     <div className="stack">
-      <PageHeader title="IT Staffing" action={canWrite(user.role, "candidates") ? <Link className="btn-primary" href="/candidates?new=1">+ Add candidate</Link> : null} />
-      <StaffingTabs current="/candidates" />
+      <PageHeader title="Candidates" action={canWrite(user.role, "candidates") ? <Link className="btn-primary" href="/candidates?new=1">+ Add candidate</Link> : null} />
       <Notice text={q(sp.notice)} />
       <form className="card" action="/candidates">
         <input name="q" placeholder="Skills, name, or location" defaultValue={q(sp.q)} aria-label="Search candidates" />

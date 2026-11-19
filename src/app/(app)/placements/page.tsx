@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { StaffingTabs } from "@/components/section-nav";
 import { PageHeader, Pill } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -14,8 +13,7 @@ export default async function PlacementsPage() {
   const rows = listPlacements(user);
   return (
     <div className="stack">
-      <PageHeader title="IT Staffing" />
-      <StaffingTabs current="/placements" />
+      <PageHeader title="Placements" />
       <div className="table-wrap">
         <table>
           <thead>

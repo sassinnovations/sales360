@@ -48,7 +48,9 @@ export default async function LeadDetail({
         <article className="card stack">
           <p><Pill value={String(lead.status)} /> · {String(lead.source || "No source")} · Owner {String(lead.ownerName ?? "—")}</p>
           <p>{String(lead.title ?? "")} {lead.company ? `at ${lead.company}` : ""}</p>
-          <p>{String(lead.email ?? "No email")} · {String(lead.phone ?? "No phone")}</p>
+          <p>{String(lead.email ?? "No email")} · {lead.phone ? String(lead.phone) : "No mobile number"}</p>
+          {lead.linkedinUrl ? <p><a href={String(lead.linkedinUrl).startsWith("http") ? String(lead.linkedinUrl) : `https://${lead.linkedinUrl}`}>LinkedIn</a></p> : null}
+          <p>{[lead.city, lead.state, lead.country].filter(Boolean).join(", ") || "No location"}</p>
           <p>{String(lead.notes ?? "")}</p>
           {lead.convertedAt ? (
             <p>
@@ -76,11 +78,16 @@ export default async function LeadDetail({
           submitLabel="Save lead"
           hidden={{ id, version: String(lead.version) }}
           fields={[
-            { name: "name", label: "Person", defaultValue: String(lead.name ?? "") },
+            { name: "firstName", label: "First name", required: true, defaultValue: String(lead.firstName ?? String(lead.name ?? "").split(" ")[0] ?? "") },
+            { name: "lastName", label: "Last name", required: true, defaultValue: String(lead.lastName ?? String(lead.name ?? "").split(" ").slice(1).join(" ")) },
             { name: "company", label: "Company", defaultValue: String(lead.company ?? "") },
             { name: "title", label: "Title", defaultValue: String(lead.title ?? "") },
             { name: "email", label: "Email", defaultValue: String(lead.email ?? "") },
-            { name: "phone", label: "Phone", defaultValue: String(lead.phone ?? "") },
+            { name: "phone", label: "Mobile number", defaultValue: String(lead.phone ?? "") },
+            { name: "linkedinUrl", label: "LinkedIn URL", wide: true, defaultValue: String(lead.linkedinUrl ?? "") },
+            { name: "city", label: "City", defaultValue: String(lead.city ?? "") },
+            { name: "state", label: "State", defaultValue: String(lead.state ?? "") },
+            { name: "country", label: "Country", defaultValue: String(lead.country ?? "") },
             { name: "source", label: "Source", type: "select", defaultValue: String(lead.source ?? ""), options: sources.map((item) => ({ value: item, label: item })) },
             { name: "status", label: "Status", type: "select", defaultValue: String(lead.status), options: ["New", "Working", "Qualified", "Unqualified", "Archived"].map((item) => ({ value: item, label: item })) },
             { name: "ownerId", label: "Owner", type: "select", defaultValue: String(lead.ownerId ?? ""), options: people.map((person) => ({ value: person.id, label: person.name })) },

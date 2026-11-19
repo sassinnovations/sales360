@@ -68,11 +68,16 @@ export default async function LeadsPage({
           action={saveLead}
           submitLabel="Create lead"
           fields={[
-            { name: "name", label: "Person", required: true },
+            { name: "firstName", label: "First name", required: true },
+            { name: "lastName", label: "Last name", required: true },
             { name: "company", label: "Company" },
             { name: "title", label: "Title" },
             { name: "email", label: "Email", type: "email" },
-            { name: "phone", label: "Phone" },
+            { name: "phone", label: "Mobile number" },
+            { name: "linkedinUrl", label: "LinkedIn URL", wide: true },
+            { name: "city", label: "City" },
+            { name: "state", label: "State" },
+            { name: "country", label: "Country" },
             { name: "source", label: "Source", type: "select", options: sources.map((item) => ({ value: item, label: item })) },
             { name: "status", label: "Status", type: "select", defaultValue: "New", options: ["New", "Working", "Qualified", "Unqualified"].map((item) => ({ value: item, label: item })) },
             { name: "ownerId", label: "Owner", type: "select", defaultValue: user.id, options: people.map((person) => ({ value: person.id, label: person.name })) },

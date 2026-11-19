@@ -6,7 +6,7 @@ import { seedIfEmpty } from "./seed";
 
 type SqlValue = string | number | null | bigint;
 
-const globalForDb = globalThis as unknown as { sales360?: DatabaseSync };
+const globalForDb = globalThis as unknown as { sales360?: DatabaseSync; sales360LeadColumns?: boolean };
 
 function openDatabase() {
   const dir = path.join(process.cwd(), "data");
@@ -18,10 +18,35 @@ function openDatabase() {
   return db;
 }
 
+function ensureLeadColumns(db: DatabaseSync) {
+  const columns = new Set(
+    (db.prepare("pragma table_info(leads)").all() as { name: string }[]).map((column) => column.name),
+  );
+  for (const name of ["first_name", "last_name", "linkedin_url", "city", "state", "country"]) {
+    if (!columns.has(name)) db.exec(`alter table leads add column ${name} text`);
+  }
+  const rows = db.prepare("select id, name, first_name, last_name from leads").all() as {
+    id: string;
+    name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  }[];
+  const fill = db.prepare("update leads set first_name = ?, last_name = ? where id = ?");
+  for (const row of rows) {
+    if (row.first_name || row.last_name || !row.name) continue;
+    const parts = row.name.trim().split(/\s+/);
+    fill.run(parts[0] ?? "", parts.slice(1).join(" "), row.id);
+  }
+}
+
 export function getDb() {
   if (!globalForDb.sales360) {
     globalForDb.sales360 = openDatabase();
     seedIfEmpty(globalForDb.sales360);
+  }
+  if (!globalForDb.sales360LeadColumns) {
+    ensureLeadColumns(globalForDb.sales360);
+    globalForDb.sales360LeadColumns = true;
   }
   return globalForDb.sales360;
 }
