@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EntityForm } from "@/components/entity-form";
+import { BoardToggle } from "@/components/section-nav";
 import { Notice, PageHeader, Pill } from "@/components/ui";
 import { saveOpportunity } from "@/lib/actions/crm";
 import { getCurrentUser } from "@/lib/auth";
@@ -20,7 +21,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const contacts = listContacts(user, {});
   return (
     <div className="stack">
-      <PageHeader eyebrow="Sales CRM" title="Opportunities" action={<Link className="btn-ghost" href="/pipeline">Board</Link>} />
+      <PageHeader title="Opportunities" action={<BoardToggle current="list" />} />
       <Notice text={q(sp.notice)} />
       <form className="card" action="/opportunities" style={{ display: "flex", gap: 8 }}>
         <input name="q" placeholder="Search" defaultValue={q(sp.q)} aria-label="Search opportunities" />

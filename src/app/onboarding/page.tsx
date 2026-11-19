@@ -8,7 +8,7 @@ export default function OnboardingPage() {
     <main className="auth">
       <section className="auth-story">
         <div>
-          <p className="eyebrow" style={{ color: "#e7b15a" }}>Tenant setup</p>
+          <p className="eyebrow">Tenant setup</p>
           <h1>Name the company. Choose how it sells. Walk in as the owner.</h1>
         </div>
         <p>General B2B, IT staffing, or both. The draft stays in this browser if you leave.</p>

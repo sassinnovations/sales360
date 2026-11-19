@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EntityForm } from "@/components/entity-form";
+import { StaffingTabs } from "@/components/section-nav";
 import { Notice, PageHeader, Pill } from "@/components/ui";
 import { saveRequirement } from "@/lib/actions/staffing";
 import { getCurrentUser } from "@/lib/auth";
+import { formatDate } from "@/lib/format";
 import { canAccess, canSeeCandidateRates, canWrite } from "@/lib/permissions";
 import { accountsFor, listRequirements, usersInTenant } from "@/lib/queries";
 import { q } from "@/lib/search";
@@ -19,8 +21,13 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
   const showRates = canSeeCandidateRates(user.role);
   return (
     <div className="stack">
-      <PageHeader eyebrow="Staffing" title="Client requirements" action={canWrite(user.role, "requirements") ? <Link className="btn-primary" href="/requirements?new=1">New requirement</Link> : null} />
+      <PageHeader title="IT Staffing" action={canWrite(user.role, "requirements") ? <Link className="btn-primary" href="/requirements?new=1">+ Add requirement</Link> : null} />
+      <StaffingTabs current="/requirements" />
       <Notice text={q(sp.notice)} />
+      <form className="toolbar" action="/requirements">
+        <input name="q" placeholder="Search requirements..." defaultValue={q(sp.q)} aria-label="Search requirements" />
+        <button className="btn-ghost">Filter</button>
+      </form>
       {q(sp.new) === "1" ? (
         <EntityForm
           action={saveRequirement}
@@ -48,18 +55,19 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
       ) : null}
       <div className="table-wrap">
         <table>
-          <thead><tr>{["Role", "Client", "Status", "Positions", "Owner", "Submissions"].map((item) => <th key={item}>{item}</th>)}</tr></thead>
+          <thead><tr>{["Req ID", "Role", "Skills", "Positions", "Status", "Client", "Target date"].map((item) => <th key={item}>{item}</th>)}</tr></thead>
           <tbody>
             {rows.map((row) => {
               const item = row as Record<string, string | number>;
               return (
                 <tr key={String(item.id)}>
-                  <td><Link href={`/requirements/${item.id}`}>{item.title}</Link></td>
-                  <td>{item.accountName}</td>
-                  <td><Pill value={String(item.status)} /></td>
+                  <td className="muted">{String(item.id).replace("req_", "REQ-").toUpperCase()}</td>
+                  <td><Link href={`/requirements/${item.id}`}><strong>{item.title}</strong></Link></td>
+                  <td>{item.skills || "—"}</td>
                   <td>{item.positions}</td>
-                  <td>{item.ownerName}</td>
-                  <td>{item.submissionCount}</td>
+                  <td><Pill value={String(item.status)} /></td>
+                  <td>{item.accountName}</td>
+                  <td>{formatDate(String(item.targetDate ?? ""), user.timezone)}</td>
                 </tr>
               );
             })}

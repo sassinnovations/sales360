@@ -14,6 +14,7 @@ type Card = {
   accountName: string | null;
   ownerName: string | null;
   version: number;
+  probability: number;
 };
 
 export function PipelineBoard({
@@ -47,23 +48,28 @@ export function PipelineBoard({
             onDrop={() => drop(column.id)}
           >
             <header>
-              <strong>{column.name}</strong>
-              <p className="muted">{money(column.total)} weighted</p>
+              <strong>{column.name} ({column.cards.length})</strong>
+              <span>{money(column.cards.reduce((sum, card) => sum + Number(card.amount || 0), 0))}</span>
             </header>
-            {column.cards.map((card) => (
-              <article
-                key={card.id}
-                className="deal"
-                draggable
-                onDragStart={() => setDrag(card)}
-              >
-                <Link href={`/opportunities/${card.id}`}>{card.name}</Link>
-                <p className="muted">
-                  {card.accountName} · {money(card.amount, card.currency)}
-                </p>
-                <p className="muted">{card.ownerName} · {card.closeDate?.slice(0, 10)}</p>
-              </article>
-            ))}
+            {column.cards.map((card) => {
+              const heat = card.probability >= 60 ? "High" : card.probability >= 30 ? "Medium" : "Low";
+              return (
+                <article
+                  key={card.id}
+                  className="deal"
+                  draggable
+                  onDragStart={() => setDrag(card)}
+                >
+                  <Link href={`/opportunities/${card.id}`}><strong>{card.name}</strong></Link>
+                  <p className="muted" style={{ margin: "4px 0 0" }}>{card.accountName}</p>
+                  <div className="deal-row">
+                    <strong>{money(card.amount, card.currency)}</strong>
+                    <span className={`pill pill-${heat.toLowerCase()}`}>{heat}</span>
+                  </div>
+                  <p className="muted" style={{ margin: "8px 0 0" }}>{card.ownerName}</p>
+                </article>
+              );
+            })}
           </section>
         ))}
       </div>

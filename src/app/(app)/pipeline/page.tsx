@@ -1,3 +1,4 @@
+import { BoardToggle } from "@/components/section-nav";
 import { Notice, PageHeader } from "@/components/ui";
 import { PipelineBoard } from "@/components/pipeline-board";
 import { getCurrentUser } from "@/lib/auth";
@@ -15,9 +16,9 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   return (
     <div className="stack">
-      <PageHeader eyebrow="Forecast view" title="Pipeline" />
+      <PageHeader title="Opportunities" action={<BoardToggle current="board" />} />
       <Notice text={q(sp.notice)} />
-      <p className="muted">Drag a card between open stages. Closed-won and closed-lost stay on the opportunity, where a reason or close date is required. Weighted totals use amount × probability.</p>
+      <p className="muted">Drag a card between open stages. Closed-won and closed-lost stay on the opportunity record.</p>
       <PipelineBoard columns={columns} />
     </div>
   );

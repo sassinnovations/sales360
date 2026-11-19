@@ -23,6 +23,7 @@ export function seedIfEmpty(db: DatabaseSync) {
 
   const now = iso(0);
   const password = hashPassword("Sales360!");
+  const ownerPassword = hashPassword("Sass@2021");
   const insert = db.prepare.bind(db);
 
   const run = (sql: string, ...params: (string | number | null)[]) => {
@@ -51,7 +52,7 @@ export function seedIfEmpty(db: DatabaseSync) {
     );
 
     const people: [string, string, string, string, string, string, string][] = [
-      [PRIYA, "Priya Shah", "priya.shah@northstar.example", "owner", "Leadership", "Managing Director", "+91 98000 10001"],
+      [PRIYA, "Priya Shah", "info@sassinnovations.com", "owner", "Leadership", "Managing Director", "+91 98000 10001"],
       [ARUN, "Arun Mehta", "arun.mehta@northstar.example", "manager", "Sales", "Sales Manager", "+91 98000 10002"],
       [LEAH, "Leah Okonkwo", "leah.okonkwo@northstar.example", "bdm", "Sales", "Business Development Manager", "+91 98000 10003"],
       [ROHAN, "Rohan Iyer", "rohan.iyer@northstar.example", "recruiter", "Resourcing", "Lead Recruiter", "+91 98000 10004"],
@@ -67,7 +68,7 @@ export function seedIfEmpty(db: DatabaseSync) {
         TENANT,
         name,
         email,
-        password,
+        id === PRIYA ? ownerPassword : password,
         role,
         team,
         title,
