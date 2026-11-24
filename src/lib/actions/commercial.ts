@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { one, run, transaction } from "@/db";
 import { getCurrentUser } from "@/lib/auth";
 import { canApprove, canWrite } from "@/lib/permissions";
@@ -385,5 +386,62 @@ export async function updateCampaignMemberStage(formData: FormData): Promise<voi
     recordType: "campaign_member",
     recordId: memberId,
     summary: `Campaign member moved to ${stage}.`,
+  });
+}
+
+export async function updateRenewalStatus(
+  formData: FormData,
+): Promise<void> {
+  const user = await getCurrentUser();
+
+  if (!canWrite(user.role, "contracts")) {
+    return;
+  }
+
+  const contractId = text(formData.get("contractId"));
+  const renewalStatus = text(formData.get("renewalStatus"));
+
+  const allowedStatuses = [
+    "Not Started",
+    "In Discussion",
+    "Renewed",
+    "Not Renewing",
+  ];
+
+  if (!contractId || !allowedStatuses.includes(renewalStatus)) {
+    return;
+  }
+
+  const contract = one<{ id: string }>(
+    `select id
+     from contracts
+     where id = ? and tenant_id = ?`,
+    contractId,
+    user.tenantId,
+  );
+
+  if (!contract) {
+    return;
+  }
+
+  run(
+    `update contracts
+     set renewal_status = ?, updated_at = ?, version = version + 1
+     where id = ? and tenant_id = ?`,
+    renewalStatus,
+    nowIso(),
+    contractId,
+    user.tenantId,
+  );
+
+  revalidatePath("/renewals");
+
+  audit({
+    tenantId: user.tenantId,
+    actorId: user.id,
+    action: "renewal_status",
+    recordType: "contract",
+    recordId: contractId,
+    summary: "Renewal status changed to " + renewalStatus + ".",
   });
 }

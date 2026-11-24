@@ -357,6 +357,7 @@ create table if not exists contracts (
   currency text,
   owner_id text,
   renewal_lead_days integer not null default 30,
+  renewal_status text not null default 'Not Started',
   notes text,
   created_at text not null,
   updated_at text not null,
