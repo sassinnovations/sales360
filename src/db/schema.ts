@@ -411,7 +411,8 @@ create table if not exists campaign_members (
   id text primary key,
   campaign_id text not null,
   contact_id text not null,
-  status text not null
+  status text not null,
+  stage text not null default 'New'
 );
 
 create table if not exists workflow_rules (

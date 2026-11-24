@@ -312,16 +312,78 @@ export async function saveCampaign(_prev: ActionState, formData: FormData): Prom
   );
   const contacts = formData.getAll("contactId").map((value) => text(value)).filter(Boolean);
   for (const contactId of contacts) {
-    const contact = one<{ consent: string }>(`select consent from contacts where id = ? and tenant_id = ?`, contactId, user.tenantId);
+    const contact = one<{ consent: string }>(
+      `select consent from contacts where id = ? and tenant_id = ?`,
+      contactId,
+      user.tenantId,
+    );
     if (!contact) continue;
+
     run(
-      `insert into campaign_members (id, campaign_id, contact_id, status) values (?, ?, ?, ?)`,
+      `insert into campaign_members
+       (id, campaign_id, contact_id, status, stage)
+       values (?, ?, ?, ?, ?)`,
       nid("cm"),
       id,
       contactId,
       contact.consent === "opted_out" ? "Suppressed" : "Ready",
+      contact.consent === "opted_out" ? "Suppressed" : "New",
     );
   }
   audit({ tenantId: user.tenantId, actorId: user.id, action: "create", recordType: "campaign", recordId: id, summary: `Created campaign ${name}.` });
   redirect(`/campaigns/${id}?notice=Campaign saved. Opted-out contacts are suppressed.`);
+}
+export async function updateCampaignMemberStage(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+
+  if (!canWrite(user.role, "campaigns")) {
+    return;
+  }
+
+  const memberId = text(formData.get("memberId"));
+  const stage = text(formData.get("stage"));
+
+  if (!memberId || !["New", "Suppressed"].includes(stage)) {
+    return;
+  }
+
+  const member = one<{ id: string; campaignId: string }>(
+    `select id, campaign_id as campaignId
+     from campaign_members
+     where id = ?`,
+    memberId,
+  );
+
+  if (!member) {
+    return;
+  }
+
+  const campaign = one<{ id: string }>(
+    `select id
+     from campaigns
+     where id = ? and tenant_id = ?`,
+    member.campaignId,
+    user.tenantId,
+  );
+
+  if (!campaign) {
+    return;
+  }
+
+  run(
+    `update campaign_members
+     set stage = ?
+     where id = ?`,
+    stage,
+    memberId,
+  );
+
+  audit({
+    tenantId: user.tenantId,
+    actorId: user.id,
+    action: "stage",
+    recordType: "campaign_member",
+    recordId: memberId,
+    summary: `Campaign member moved to ${stage}.`,
+  });
 }
