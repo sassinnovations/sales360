@@ -35,7 +35,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
             { name: "validUntil", label: "Valid until", type: "date", required: true },
             { name: "discountPct", label: "Discount %", type: "number", defaultValue: "0" },
             { name: "taxPct", label: "Tax %", type: "number", defaultValue: "18" },
-            { name: "description", label: "Line description", required: true },
+            { name: "description", label: "Service line description", required: true },
             { name: "quantity", label: "Quantity", type: "number", defaultValue: "1" },
             { name: "rate", label: "Rate", type: "number", defaultValue: "0" },
             { name: "notes", label: "Assumptions", type: "textarea", wide: true },

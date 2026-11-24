@@ -664,9 +664,17 @@ export async function saveActivity(_prev: ActionState, formData: FormData): Prom
   const user = await getCurrentUser();
   if (!canWrite(user.role, "activities") && !canWrite(user.role, "tasks")) return { error: "You do not have access to edit activities." };
   const subject = text(formData.get("subject"));
+  const type = text(formData.get("type")) || "call";
+
+const allowedTypes = ["call", "email", "meeting"];
+
+const fields: Record<string, string> = {};
+
+if (!allowedTypes.includes(type)) {
+  fieldError(fields, "type", "Choose a valid activity type.");
+}
   const due = text(formData.get("dueAt"));
   const ownerId = text(formData.get("ownerId")) || user.id;
-  const fields: Record<string, string> = {};
   if (!subject) fieldError(fields, "subject", "Subject is required.");
   if (!due) fieldError(fields, "dueAt", "Due date is required.");
   const end = text(formData.get("endAt"));
@@ -683,7 +691,7 @@ export async function saveActivity(_prev: ActionState, formData: FormData): Prom
       run(
         `update activities set type = ?, subject = ?, body = ?, status = ?, priority = ?, due_at = ?, owner_id = ?, outcome = ?, updated_at = ?, version = version + 1
          where id = ? and tenant_id = ? and version = ?`,
-        text(formData.get("type")) || "task",
+       type,
         subject,
         text(formData.get("body")) || null,
         status,
@@ -706,7 +714,7 @@ export async function saveActivity(_prev: ActionState, formData: FormData): Prom
        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       activityId,
       user.tenantId,
-      text(formData.get("type")) || "task",
+     type,
       subject,
       text(formData.get("body")) || null,
       status,
