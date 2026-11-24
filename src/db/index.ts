@@ -12,6 +12,7 @@ const globalForDb = globalThis as unknown as {
   sales360ContactColumns?: boolean;
   sales360OpportunityColumns?: boolean;
   sales360AccountColumns?: boolean;
+  sales360RequirementColumns?: boolean;
 };
 
 function openDatabase() {
@@ -86,27 +87,57 @@ function ensureAccountColumns(db: DatabaseSync) {
   }
 }
 
+function ensureRequirementColumns(db: DatabaseSync) {
+  const columns = new Set(
+    (
+      db.prepare("PRAGMA table_info(requirements)").all() as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+
+  const newColumns = [
+    "category",
+    "work_authorization",
+    "requirement_date",
+  ];
+
+  for (const name of newColumns) {
+    if (!columns.has(name)) {
+      db.exec(`ALTER TABLE requirements ADD COLUMN ${name} TEXT`);
+    }
+  }
+}
+
 export function getDb() {
   if (!globalForDb.sales360) {
     globalForDb.sales360 = openDatabase();
     seedIfEmpty(globalForDb.sales360);
   }
+
   if (!globalForDb.sales360LeadColumns) {
     ensureLeadColumns(globalForDb.sales360);
     globalForDb.sales360LeadColumns = true;
   }
   if (!globalForDb.sales360ContactColumns) {
-  ensureContactColumns(globalForDb.sales360);
-  globalForDb.sales360ContactColumns = true;
-}
-if (!globalForDb.sales360OpportunityColumns) {
-  ensureOpportunityColumns(globalForDb.sales360);
-  globalForDb.sales360OpportunityColumns = true;
-}
-if (!globalForDb.sales360AccountColumns) {
-  ensureAccountColumns(globalForDb.sales360);
-  globalForDb.sales360AccountColumns = true;
-}
+    ensureContactColumns(globalForDb.sales360);
+    globalForDb.sales360ContactColumns = true;
+  }
+
+  if (!globalForDb.sales360OpportunityColumns) {
+    ensureOpportunityColumns(globalForDb.sales360);
+    globalForDb.sales360OpportunityColumns = true;
+  }
+
+  if (!globalForDb.sales360AccountColumns) {
+    ensureAccountColumns(globalForDb.sales360);
+    globalForDb.sales360AccountColumns = true;
+  }
+
+  if (!globalForDb.sales360RequirementColumns) {
+    ensureRequirementColumns(globalForDb.sales360);
+    globalForDb.sales360RequirementColumns = true;
+  }
   return globalForDb.sales360;
 }
 

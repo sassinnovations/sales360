@@ -24,6 +24,13 @@ export default async function RequirementDetail({ params }: { params: Promise<{ 
         {canSeeCandidateRates(user.role) ? <p>Rate {money(Number(item.rateMin), user.currency)} – {money(Number(item.rateMax), user.currency)}</p> : <p>Commercial rates are hidden for your role.</p>}
         <p>{String(item.description ?? "")}</p>
         <p>Must have: {String(item.mustHave ?? "—")}</p>
+         <p>Category: {String(item.category ?? "—")}</p>
+
+  <p>Work Authorization: {String(item.workAuthorization ?? "—")}</p>
+
+  <p>Requirement Date: {String(item.requirementDate ?? "—")}</p>
+
+  <p>Date of Creation: {String(item.createdAt ?? "—")}</p>
       </article>
       <article className="card stack">
         <h2>Submissions</h2>
