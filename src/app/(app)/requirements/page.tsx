@@ -10,7 +10,12 @@ import { accountsFor, listRequirements, usersInTenant } from "@/lib/queries";
 import { q } from "@/lib/search";
 
 export const instant = false;
-const STATUSES = ["New", "Qualified", "Sourcing", "Submitted", "Interviewing", "On Hold", "Filled", "Cancelled"];
+const STATUSES = [  
+  "Filled",
+  "Open",
+  "On Hold",
+  "Closed"
+];
 
 export default async function RequirementsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const user = await getCurrentUser();
@@ -32,19 +37,51 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
           submitLabel="Create requirement"
           fields={[
             { name: "title", label: "Role", required: true },
-            { name: "accountId", label: "Client", type: "select", required: true, options: accountsFor(user).map((account) => ({ value: account.id, label: account.name })) },
+            {
+  name: "category",
+  label: "Category",
+  type: "select",
+  options: [
+    "IT Staffing",
+    "Implementation Partner",
+    "In-Client"
+  ].map((item) => ({
+    value: item,
+    label: item
+  }))
+},
+            { name: "accountId", label: "Client", type: "select",  options: accountsFor(user).map((account) => ({ value: account.id, label: account.name })) },
             { name: "ownerId", label: "Owner", type: "select", defaultValue: user.id, options: usersInTenant(user.tenantId).map((person) => ({ value: person.id, label: person.name })) },
-            { name: "status", label: "Status", type: "select", defaultValue: "New", options: STATUSES.map((item) => ({ value: item, label: item })) },
+            { name: "status", label: "Status", type: "select", defaultValue: "Open", options: STATUSES.map((item) => ({ value: item, label: item })) },
             { name: "skills", label: "Skills" },
             { name: "experience", label: "Experience" },
             { name: "location", label: "Location" },
             { name: "workMode", label: "Work mode", type: "select", options: ["Remote", "Hybrid", "On-site"].map((item) => ({ value: item, label: item })) },
             { name: "employmentType", label: "Employment", type: "select", options: ["Contract", "Permanent"].map((item) => ({ value: item, label: item })) },
+            {
+  name: "workAuthorization",
+  label: "Work Authorization",
+  type: "select",
+  options: [
+    "US Citizen",
+    "H1B",
+    "GC",
+    "N/A"
+  ].map((item) => ({
+    value: item,
+    label: item
+  }))
+},
             { name: "positions", label: "Positions", type: "number", defaultValue: "1", required: true },
             { name: "priority", label: "Priority", type: "select", defaultValue: "Normal", options: ["Low", "Normal", "High"].map((item) => ({ value: item, label: item })) },
             ...(showRates ? [{ name: "rateMin", label: "Min rate", type: "number" }, { name: "rateMax", label: "Max rate", type: "number" }] : []),
             { name: "startDate", label: "Start", type: "date" },
             { name: "targetDate", label: "Target", type: "date" },
+            {
+  name: "requirementDate",
+  label: "Requirement Date",
+  type: "date"
+},
             { name: "hiringManager", label: "Hiring manager" },
             { name: "mustHave", label: "Must have", wide: true },
             { name: "description", label: "Description", type: "textarea", wide: true },

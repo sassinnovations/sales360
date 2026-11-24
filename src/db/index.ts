@@ -6,7 +6,11 @@ import { seedIfEmpty } from "./seed";
 
 type SqlValue = string | number | null | bigint;
 
-const globalForDb = globalThis as unknown as { sales360?: DatabaseSync; sales360LeadColumns?: boolean };
+const globalForDb = globalThis as unknown as {
+  sales360?: DatabaseSync;
+  sales360LeadColumns?: boolean;
+  sales360RequirementColumns?: boolean;
+};
 
 function openDatabase() {
   const dir = path.join(process.cwd(), "data");
@@ -39,15 +43,44 @@ function ensureLeadColumns(db: DatabaseSync) {
   }
 }
 
+function ensureRequirementColumns(db: DatabaseSync) {
+  const columns = new Set(
+    (
+      db.prepare("PRAGMA table_info(requirements)").all() as {
+        name: string;
+      }[]
+    ).map((column) => column.name),
+  );
+
+  const newColumns = [
+    "category",
+    "work_authorization",
+    "requirement_date",
+  ];
+
+  for (const name of newColumns) {
+    if (!columns.has(name)) {
+      db.exec(`ALTER TABLE requirements ADD COLUMN ${name} TEXT`);
+    }
+  }
+}
+
 export function getDb() {
   if (!globalForDb.sales360) {
     globalForDb.sales360 = openDatabase();
     seedIfEmpty(globalForDb.sales360);
   }
+
   if (!globalForDb.sales360LeadColumns) {
     ensureLeadColumns(globalForDb.sales360);
     globalForDb.sales360LeadColumns = true;
   }
+
+  if (!globalForDb.sales360RequirementColumns) {
+    ensureRequirementColumns(globalForDb.sales360);
+    globalForDb.sales360RequirementColumns = true;
+  }
+
   return globalForDb.sales360;
 }
 

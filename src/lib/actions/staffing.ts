@@ -11,15 +11,23 @@ import type { ActionState } from "@/lib/types";
 import { fieldError, isEmail, isPhone, numberValue, text } from "@/lib/validate";
 
 const CONFLICT = "This record was updated by someone else. Refresh and reconcile your changes.";
-const REQ_STATUS = ["New", "Qualified", "Sourcing", "Submitted", "Interviewing", "On Hold", "Filled", "Cancelled"];
+const REQ_STATUS = [
+  "Filled",
+  "Open",
+  "On Hold",
+  "Closed"
+];
 const SUB_STATUS = ["Draft", "Submitted", "Client Review", "Shortlisted", "Interview", "Rejected", "Withdrawn", "Selected"];
 
 export async function saveRequirement(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await getCurrentUser();
   if (!canWrite(user.role, "requirements")) return { error: "You do not have access to edit requirements." };
   const title = text(formData.get("title"));
-  const accountId = text(formData.get("accountId"));
-  const status = text(formData.get("status")) || "New";
+const accountId = text(formData.get("accountId")) || null;
+const category = text(formData.get("category"));
+const workAuthorization = text(formData.get("workAuthorization"));
+const requirementDate = text(formData.get("requirementDate"));
+const status = text(formData.get("status")) || "Open";
   const positions = numberValue(formData.get("positions"));
   const rateMin = numberValue(formData.get("rateMin"));
   const rateMax = numberValue(formData.get("rateMax"));
@@ -27,8 +35,17 @@ export async function saveRequirement(_prev: ActionState, formData: FormData): P
   const target = text(formData.get("targetDate"));
   const fields: Record<string, string> = {};
   if (!title) fieldError(fields, "title", "Title is required.");
-  const account = one(`select id from accounts where id = ? and tenant_id = ?`, accountId, user.tenantId);
-  if (!account) fieldError(fields, "accountId", "Choose a client account.");
+  if (accountId) {
+  const account = one(
+    `select id from accounts where id = ? and tenant_id = ?`,
+    accountId,
+    user.tenantId
+  );
+
+  if (!account) {
+    fieldError(fields, "accountId", "Choose a valid client account.");
+  }
+}
   if (!REQ_STATUS.includes(status)) fieldError(fields, "status", "Choose a valid status.");
   if (positions == null || !Number.isInteger(positions) || positions < 1) fieldError(fields, "positions", "Position count must be a positive whole number.");
   if (rateMin != null && rateMax != null && rateMax < rateMin) fieldError(fields, "rateMax", "Maximum rate cannot be below the minimum.");
@@ -39,6 +56,9 @@ export async function saveRequirement(_prev: ActionState, formData: FormData): P
   const values = [
     accountId,
     title,
+    category || null,
+  workAuthorization || null,
+  requirementDate || null,
     text(formData.get("skills")) || null,
     text(formData.get("experience")) || null,
     text(formData.get("location")) || null,
@@ -62,14 +82,44 @@ export async function saveRequirement(_prev: ActionState, formData: FormData): P
   if (id) {
     const previous = one<{ status: string }>(`select status from requirements where id = ? and tenant_id = ?`, id, user.tenantId);
     if (!previous) return { error: "That requirement is not available." };
-    if (previous.status === "Filled" && status !== "Filled" && status !== previous.status && text(formData.get("reopen")) !== "yes" && status !== "Cancelled") {
-      if (["Sourcing", "Submitted", "Interviewing", "New", "Qualified"].includes(status)) {
-        return { error: "A filled requirement cannot accept new work unless you reopen it." };
-      }
-    }
+    if (
+  previous.status === "Filled" &&
+  status !== "Filled" &&
+  status !== "Closed" &&
+  text(formData.get("reopen")) !== "yes"
+) {
+  return {
+    error: "A filled requirement cannot be reopened without authorization."
+  };
+}
     const ok = changed(
       run(
-        `update requirements set account_id = ?, title = ?, skills = ?, experience = ?, location = ?, work_mode = ?, employment_type = ?, rate_min = ?, rate_max = ?, currency = ?, positions = ?, priority = ?, owner_id = ?, status = ?, start_date = ?, target_date = ?, description = ?, must_have = ?, nice_to_have = ?, hiring_manager = ?, updated_at = ?, version = version + 1
+        `update requirements set
+account_id = ?,
+title = ?,
+category = ?,
+work_authorization = ?,
+requirement_date = ?,
+skills = ?,
+experience = ?,
+location = ?,
+work_mode = ?,
+employment_type = ?,
+rate_min = ?,
+rate_max = ?,
+currency = ?,
+positions = ?,
+priority = ?,
+owner_id = ?,
+status = ?,
+start_date = ?,
+target_date = ?,
+description = ?,
+must_have = ?,
+nice_to_have = ?,
+hiring_manager = ?,
+updated_at = ?,
+version = version + 1
          where id = ? and tenant_id = ? and version = ?`,
         ...values,
         id,
@@ -83,8 +133,26 @@ export async function saveRequirement(_prev: ActionState, formData: FormData): P
   }
   const requirementId = nid("req");
   run(
-    `insert into requirements (id, tenant_id, account_id, title, skills, experience, location, work_mode, employment_type, rate_min, rate_max, currency, positions, priority, owner_id, status, start_date, target_date, description, must_have, nice_to_have, hiring_manager, created_at, updated_at, version)
-     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `insert into requirements (
+id, tenant_id, account_id, title,
+category, work_authorization, requirement_date,
+skills, experience, location, work_mode,
+employment_type, rate_min, rate_max, currency,
+positions, priority, owner_id, status,
+start_date, target_date, description,
+must_have, nice_to_have, hiring_manager,
+created_at, updated_at, version
+)
+     values (
+?, ?, ?, ?,
+?, ?, ?,
+?, ?, ?, ?,
+?, ?, ?, ?,
+?, ?, ?, ?,
+?, ?, ?,
+?, ?, ?,
+?, ?, 1
+)`,
     requirementId,
     user.tenantId,
     ...values,

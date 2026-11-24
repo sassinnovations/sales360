@@ -38,7 +38,7 @@ export default async function ActivitiesPage({ searchParams }: { searchParams: P
           action={saveActivity}
           submitLabel="Add activity"
           fields={[
-            { name: "type", label: "Type", type: "select", defaultValue: "task", options: ["task", "call", "meeting", "note"].map((item) => ({ value: item, label: item })) },
+            { name: "type", label: "Type", type: "select", defaultValue: "task", options: ["call", "email", "meeting"].map((item) => ({ value: item, label: item })) },
             { name: "subject", label: "Subject", required: true },
             { name: "dueAt", label: "Due", type: "datetime-local", required: true },
             { name: "priority", label: "Priority", type: "select", defaultValue: "Normal", options: ["Low", "Normal", "High"].map((item) => ({ value: item, label: item })) },
