@@ -31,8 +31,11 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
             { name: "department", label: "Department" },
             { name: "email", label: "Email", type: "email" },
             { name: "phone", label: "Phone" },
+            { name: "country", label: "Country" },
+            { name: "state", label: "State" },
+            { name: "city", label: "City" },
             { name: "buyingRole", label: "Role in the buy" },
-            { name: "consent", label: "Consent", type: "select", defaultValue: "unknown", options: ["unknown", "opted_in", "opted_out"].map((item) => ({ value: item, label: item })) },
+            { name: "consent", label: "Consent", type: "select", defaultValue: "unknown", options: [ {value:"unknown", label:"Unknown"}, {value: "opted_in", label: "Yes"}, {value: "opted_out", label: "No"}, {value: "dnc", label:"DNC(Do Not Contact)"},],},
             { name: "isPrimary", label: "Primary contact for this account", type: "checkbox" },
           ]}
         />

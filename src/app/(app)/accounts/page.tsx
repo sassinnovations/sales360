@@ -18,6 +18,20 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   const data = listAccounts(user, { q: q(sp.q), status: q(sp.status) });
   const types = settingList(user.tenantId, "account_types", []);
   const industries = settingList(user.tenantId, "industries", []);
+  const regions = settingList(user.tenantId, "regions", [
+  "North",
+  "South",
+  "East",
+  "West",
+  "Central",
+  "North America",
+  "South America",
+  "Europe",
+  "Middle East",
+  "Africa",
+  "Asia Pacific",
+  "Oceania",
+]);
   return (
     <div className="stack">
       <PageHeader eyebrow="Customer 360" title="Accounts" action={canWrite(user.role, "accounts") ? <Link className="btn-primary" href="/accounts?new=1">New account</Link> : null} />
@@ -31,22 +45,31 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           action={saveAccount}
           submitLabel="Create account"
           fields={[
-            { name: "name", label: "Account name", required: true },
+                        { name: "name", label: "Account name", required: true },
             { name: "type", label: "Type", type: "select", options: types.map((item) => ({ value: item, label: item })) },
             { name: "industry", label: "Industry", type: "select", options: industries.map((item) => ({ value: item, label: item })) },
             { name: "website", label: "Website" },
-            { name: "region", label: "Region" },
-            { name: "country", label: "Country", defaultValue: "India" },
+            { name: "linkedinUrl", label: "LinkedIn URL" },
+            { name: "region", label: "Region", type: "select", options: regions.map((item) => ({ value: item, label: item, })), },
+            { name: "country", label: "Country", wide: true },
+            { name: "state", label: "State / Province" },
+            { name: "city", label: "City" },
+            { name: "annualRevenue", label: "Annual Revenue", type: "number" },
+            {
+              name: "accountStatus",
+              label: "Account Status",
+              type: "select",
+              defaultValue: "New",
+              options: ["New", "Prospecting", "Qualification", "Negotiation", "Closed Won", "Closed Lost"].map((item) => ({ value: item, label: item })),
+            },
             { name: "ownerId", label: "Owner", type: "select", defaultValue: user.id, options: usersInTenant(user.tenantId).map((person) => ({ value: person.id, label: person.name })) },
             { name: "parentId", label: "Parent account", type: "select", options: accountsFor(user).map((account) => ({ value: account.id, label: account.name })) },
-            { name: "health", label: "Health", type: "select", defaultValue: "Watch", options: ["Strong", "Watch", "At risk"].map((item) => ({ value: item, label: item })) },
-            { name: "healthReason", label: "Why this health", type: "textarea", wide: true },
           ]}
         />
       ) : null}
       <div className="table-wrap">
         <table>
-          <thead><tr>{["Account", "Type", "Industry", "Region", "Owner", "Health", "Open pipeline"].map((item) => <th key={item}>{item}</th>)}</tr></thead>
+          <thead><tr>{["Account", "Type", "Industry", "Region", "Owner", "Account Status", "Open pipeline"].map((item) => <th key={item}>{item}</th>)}</tr></thead>
           <tbody>
             {data.rows.length === 0 ? <tr><td colSpan={7}>No accounts match.</td></tr> : data.rows.map((row) => {
               const account = row as Record<string, string | number | null>;
@@ -57,7 +80,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                   <td>{account.industry}</td>
                   <td>{account.region}</td>
                   <td>{account.ownerName}</td>
-                  <td><Pill value={String(account.health ?? "Watch")} /></td>
+                  <td><Pill value={String(account.account_status ?? "New")} /></td>
                   <td>{money(Number(account.openPipeline ?? 0), user.currency)}</td>
                 </tr>
               );

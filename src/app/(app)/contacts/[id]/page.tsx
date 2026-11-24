@@ -19,6 +19,7 @@ export default async function ContactDetail({ params }: { params: Promise<{ id: 
       <article className="card stack">
         <p>{String(contact.title ?? "")} · <Link href={`/accounts/${contact.accountId}`}>{String(contact.accountName ?? "Account")}</Link></p>
         <p>{String(contact.email ?? "No email")} · {String(contact.phone ?? "No phone")}</p>
+        <p>Location: {String(contact.city ?? "—")}, {String(contact.state ?? "—")}, {String(contact.country ?? "—")}</p>
         <p>Buying role: {String(contact.buyingRole ?? "Not set")} · Preferred channel: {String(contact.channel ?? "Email")}</p>
         <p>Consent <Pill value={String(contact.consent)} />. Check this before a campaign or email.</p>
         {contact.isPrimary ? <p>Primary contact for this account.</p> : null}

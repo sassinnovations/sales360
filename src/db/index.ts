@@ -9,6 +9,9 @@ type SqlValue = string | number | null | bigint;
 const globalForDb = globalThis as unknown as {
   sales360?: DatabaseSync;
   sales360LeadColumns?: boolean;
+  sales360ContactColumns?: boolean;
+  sales360OpportunityColumns?: boolean;
+  sales360AccountColumns?: boolean;
   sales360RequirementColumns?: boolean;
 };
 
@@ -40,6 +43,47 @@ function ensureLeadColumns(db: DatabaseSync) {
     if (row.first_name || row.last_name || !row.name) continue;
     const parts = row.name.trim().split(/\s+/);
     fill.run(parts[0] ?? "", parts.slice(1).join(" "), row.id);
+  }
+}
+function ensureContactColumns(db: DatabaseSync) {
+  const columns = new Set(
+    (db.prepare("pragma table_info(contacts)").all() as { name: string }[]).map((column) => column.name),
+  );
+
+  for (const name of ["city", "state", "country"]) {
+    if (!columns.has(name)) {
+      db.exec(`alter table contacts add column ${name} text`);
+    }
+  }
+}
+function ensureOpportunityColumns(db: DatabaseSync) {
+  const columns = new Set(
+    (db.prepare("pragma table_info(opportunities)").all() as { name: string }[]).map((column) => column.name),
+  );
+
+  if (!columns.has("customer_type")) {
+    db.exec("alter table opportunities add column customer_type text");
+  }
+}
+function ensureAccountColumns(db: DatabaseSync) {
+  const columns = new Set(
+    (db.prepare("pragma table_info(accounts)").all() as { name: string }[]).map(
+      (column) => column.name,
+    ),
+  );
+
+  const migrations: [string, string][] = [
+    ["city", "text"],
+    ["state", "text"],
+    ["annual_revenue", "real"],
+    ["linkedin_url", "text"],
+    ["account_status", "text not null default 'New'"],
+  ];
+
+  for (const [name, definition] of migrations) {
+    if (!columns.has(name)) {
+      db.exec(`alter table accounts add column ${name} ${definition}`);
+    }
   }
 }
 
@@ -75,12 +119,25 @@ export function getDb() {
     ensureLeadColumns(globalForDb.sales360);
     globalForDb.sales360LeadColumns = true;
   }
+  if (!globalForDb.sales360ContactColumns) {
+    ensureContactColumns(globalForDb.sales360);
+    globalForDb.sales360ContactColumns = true;
+  }
+
+  if (!globalForDb.sales360OpportunityColumns) {
+    ensureOpportunityColumns(globalForDb.sales360);
+    globalForDb.sales360OpportunityColumns = true;
+  }
+
+  if (!globalForDb.sales360AccountColumns) {
+    ensureAccountColumns(globalForDb.sales360);
+    globalForDb.sales360AccountColumns = true;
+  }
 
   if (!globalForDb.sales360RequirementColumns) {
     ensureRequirementColumns(globalForDb.sales360);
     globalForDb.sales360RequirementColumns = true;
   }
-
   return globalForDb.sales360;
 }
 

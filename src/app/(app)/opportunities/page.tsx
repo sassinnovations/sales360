@@ -48,6 +48,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           fields={[
             { name: "name", label: "Name", required: true },
             { name: "accountId", label: "Account", type: "select", required: true, options: accountsFor(user).map((account) => ({ value: account.id, label: account.name })) },
+            {name: "customerType",label: "Customer Type",type: "select",required: true,defaultValue: "new", options: [{ value: "new", label: "New Customer" },{ value: "existing", label: "Existing Customer" },],},
             { name: "contactId", label: "Primary contact", type: "select", options: contacts.map((contact) => ({ value: String((contact as { id: string }).id), label: String((contact as { name: string }).name) })) },
             { name: "ownerId", label: "Owner", type: "select", defaultValue: user.id, options: usersInTenant(user.tenantId).map((person) => ({ value: person.id, label: person.name })) },
             { name: "stageId", label: "Stage", type: "select", required: true, options: stages.map((stage) => ({ value: stage.id, label: stage.name })) },

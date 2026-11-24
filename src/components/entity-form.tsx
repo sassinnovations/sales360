@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import type { ActionState } from "@/lib/types";
+import { City, Country, State } from "country-state-city";
 
 export type Field = {
   name: string;
@@ -30,6 +31,16 @@ export function EntityForm({
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map((field) => [field.name, field.defaultValue ?? ""])),
   );
+  const countries = Country.getAllCountries();
+  const selectedCountry = countries.find((country) => country.name === values.country);
+  const states = selectedCountry
+    ? State.getStatesOfCountry(selectedCountry.isoCode)
+    : [];
+  const selectedState = states.find((state) => state.name === values.state);
+  const cities =
+    selectedCountry && selectedState
+      ? City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode)
+      : [];
   useEffect(() => {
     const onLeave = (event: BeforeUnloadEvent) => {
       if (!dirty) return;
@@ -56,7 +67,15 @@ export function EntityForm({
               ? "yes"
               : ""
             : target.value;
-        setValues((current) => ({ ...current, [target.name]: value }));
+        setValues((current) => {
+          if (target.name === "country") {
+            return { ...current, country: value, state: "", city: "" };
+          }
+          if (target.name === "state") {
+            return { ...current, state: value, city: "" };
+          }
+          return { ...current, [target.name]: value };
+        });
       }}
     >
       {state?.error ? <p className="warn">{state.error}</p> : null}
@@ -72,7 +91,44 @@ export function EntityForm({
               {field.label}
               {field.required ? " *" : ""}
             </span>
-            {field.type === "select" ? (
+            {field.name === "country" ? (
+              <select name="country" value={values.country ?? ""} onChange={() => undefined}>
+                <option value="">Select country</option>
+                {countries.map((country) => (
+                  <option key={country.isoCode} value={country.name}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+            ) : field.name === "state" ? (
+            <select
+            name="state"
+            value={values.state ?? ""}
+            disabled={!selectedCountry}
+            onChange={() => undefined}
+            >
+              <option value="">Select state</option>
+              {states.map((state) => (
+                <option key={state.isoCode} value={state.name}>
+                  {state.name}
+                  </option>
+                ))}
+              </select>
+            ) : field.name === "city" ? (
+              <select
+                name="city"
+                value={values.city ?? ""}
+                disabled={!selectedState}
+                onChange={() => undefined}
+              >
+                <option value="">Select city</option>
+                {cities.map((city, index) => (
+                  <option key={`${city.name}-${index}`} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            ) : field.type === "select" ? (
               <select name={field.name} value={values[field.name] ?? ""} onChange={() => undefined}>
                 <option value="">Select</option>
                 {field.options?.map((option) => (

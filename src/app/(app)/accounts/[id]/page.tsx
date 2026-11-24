@@ -49,10 +49,23 @@ export default async function AccountDetail({
       <Tabs base={`/accounts/${id}`} current={tab} tabs={tabs.map(([value, label]) => ({ id: value, label }))} />
       {tab === "overview" ? (
         <article className="card stack">
-          <p><Pill value={String(account.health ?? "Watch")} /> · {String(account.type)} · {String(account.industry ?? "")}</p>
-          <p>{String(account.healthReason ?? "No health reason recorded.")}</p>
-          <p>Open pipeline visible to you: {money(data.openPipeline, user.currency)}</p>
-          <p>{String(account.website ?? "")} · {String(account.region ?? "")} · Owner {String(account.ownerName ?? "")}</p>
+          <p><Pill value={String(account.account_status ?? "New")} />{" · "}{String(account.type ?? "")}{" · "}{String(account.industry ?? "")}</p>
+          <p>
+            <strong>Location:</strong> {String(account.city ?? "")}
+            {account.state ? `, ${String(account.state)}` : ""}
+            {account.country ? `, ${String(account.country)}` : ""}
+          </p>
+          <p>Region: {String(account.region ?? "")}</p>
+          <p>Website: {String(account.website ?? "")}</p>
+          <p>LinkedIn: {String(account.linkedin_url ?? "")}</p>
+           <p>
+            Annual Revenue:{" "}
+            {account.annual_revenue == null
+            ? "Not provided"
+            : money(Number(account.annual_revenue), user.currency)}
+           </p>
+           <p>Owner: {String(account.ownerName ?? "")}</p>
+           <p>Open pipeline visible to you: {money(data.openPipeline, user.currency)}</p>
         </article>
       ) : null}
       {tab === "contacts" ? (
