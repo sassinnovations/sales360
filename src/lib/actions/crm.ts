@@ -225,7 +225,7 @@ export async function convertLead(_prev: ActionState, formData: FormData): Promi
         opportunityId = nid("opp");
         const pipeline = one<{ id: string }>(`select id from pipelines where tenant_id = ? and is_default = 1`, user.tenantId);
         run(
-          `insert into opportunities (id, tenant_id, name, account_id, contact_id, owner_id, source, pipeline_id, stage_id, amount, currency, probability, close_date, service_line, status, created_at, updated_at, version)
+          `insert into opportunities (id, tenant_id, name, account_id, contact_id, owner_id, source, pipeline_id, stage_id, amount, currency, probability, close_date, service_line, customer_type, status, created_at, updated_at, version)
            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, 1)`,
           opportunityId,
           user.tenantId,
@@ -294,27 +294,59 @@ export async function convertLead(_prev: ActionState, formData: FormData): Promi
 export async function saveAccount(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await getCurrentUser();
   if (!canWrite(user.role, "accounts")) return { error: "You do not have access to edit accounts." };
+
   const id = text(formData.get("id"));
   const name = text(formData.get("name"));
   const website = text(formData.get("website"));
+  const linkedinUrl = text(formData.get("linkedinUrl"));
   const parentId = text(formData.get("parentId"));
+
+  const country = text(formData.get("country"));
+  const state = text(formData.get("state"));
+  const city = text(formData.get("city"));
+  const annualRevenue = numberValue(formData.get("annualRevenue"));
+  const accountStatus = text(formData.get("accountStatus")) || "New";
+
   const fields: Record<string, string> = {};
+
   if (!name) fieldError(fields, "name", "Account name is required.");
   if (website && !isWebsite(website)) fieldError(fields, "website", "Enter a valid website.");
+  if (linkedinUrl && !isWebsite(linkedinUrl)) fieldError(fields, "linkedinUrl", "Enter a valid LinkedIn URL.");
+  if (annualRevenue !== null && (!Number.isFinite(annualRevenue) || annualRevenue < 0)) {
+    fieldError(fields, "annualRevenue", "Enter a valid non-negative annual revenue.");
+  }
+
   if (parentId && parentId === id) fieldError(fields, "parentId", "An account cannot be its own parent.");
-  if (parentId && createsCycle(user.tenantId, id, parentId)) fieldError(fields, "parentId", "That parent would create a circular hierarchy.");
+  if (parentId && createsCycle(user.tenantId, id, parentId)) {
+    fieldError(fields, "parentId", "That parent would create a circular hierarchy.");
+  }
+
   const types = settingList(user.tenantId, "account_types", ["Prospect", "Customer", "Partner"]);
   const type = text(formData.get("type"));
+
   if (type && !types.includes(type)) fieldError(fields, "type", "Choose a configured account type.");
+
+  const accountStatuses = ["New", "Prospecting", "Qualification", "Negotiation", "Closed Won", "Closed Lost"];
+  if (!accountStatuses.includes(accountStatus)) {
+    fieldError(fields, "accountStatus", "Choose a valid account status.");
+  }
+
   if (Object.keys(fields).length) return { fieldErrors: fields };
+
   const now = nowIso();
+
   const values = [
     name,
     type || "Prospect",
     text(formData.get("industry")) || null,
     website || null,
     text(formData.get("region")) || null,
-    text(formData.get("country")) || null,
+    country || null,
+    city || null,
+    state || null,
+    annualRevenue,
+    linkedinUrl || null,
+    accountStatus,
     text(formData.get("ownerId")) || user.id,
     text(formData.get("status")) || "Active",
     text(formData.get("health")) || "Watch",
@@ -323,10 +355,15 @@ export async function saveAccount(_prev: ActionState, formData: FormData): Promi
     text(formData.get("phone")) || null,
     now,
   ];
+
   if (id) {
     const ok = changed(
       run(
-        `update accounts set name = ?, type = ?, industry = ?, website = ?, region = ?, country = ?, owner_id = ?, status = ?, health = ?, health_reason = ?, parent_id = ?, phone = ?, updated_at = ?, version = version + 1
+        `update accounts set
+          name = ?, type = ?, industry = ?, website = ?, region = ?, country = ?,
+          city = ?, state = ?, annual_revenue = ?, linkedin_url = ?, account_status = ?,
+          owner_id = ?, status = ?, health = ?, health_reason = ?, parent_id = ?,
+          phone = ?, updated_at = ?, version = version + 1
          where id = ? and tenant_id = ? and version = ?`,
         ...values,
         id,
@@ -334,20 +371,46 @@ export async function saveAccount(_prev: ActionState, formData: FormData): Promi
         Number(formData.get("version")),
       ),
     );
+
     if (!ok) return { error: CONFLICT };
-    audit({ tenantId: user.tenantId, actorId: user.id, action: "update", recordType: "account", recordId: id, summary: `Updated account ${name}.` });
+
+    audit({
+      tenantId: user.tenantId,
+      actorId: user.id,
+      action: "update",
+      recordType: "account",
+      recordId: id,
+      summary: `Updated account ${name}.`,
+    });
+
     redirect(`/accounts/${id}?notice=Account saved`);
   }
+
   const accountId = nid("acc");
+
   run(
-    `insert into accounts (id, tenant_id, name, type, industry, website, region, country, owner_id, status, health, health_reason, parent_id, phone, created_at, updated_at, version)
-     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `insert into accounts (
+      id, tenant_id, name, type, industry, website, region, country,
+      city, state, annual_revenue, linkedin_url, account_status,
+      owner_id, status, health, health_reason, parent_id, phone,
+      created_at, updated_at, version
+    )
+    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
     accountId,
     user.tenantId,
     ...values,
     now,
   );
-  audit({ tenantId: user.tenantId, actorId: user.id, action: "create", recordType: "account", recordId: accountId, summary: `Created account ${name}.` });
+
+  audit({
+    tenantId: user.tenantId,
+    actorId: user.id,
+    action: "create",
+    recordType: "account",
+    recordId: accountId,
+    summary: `Created account ${name}.`,
+  });
+
   redirect(`/accounts/${accountId}?notice=Account created`);
 }
 
@@ -397,11 +460,13 @@ export async function saveContact(_prev: ActionState, formData: FormData): Promi
   const primary = formData.get("isPrimary") === "yes" ? 1 : 0;
   const now = nowIso();
   const consent = text(formData.get("consent")) || "unknown";
+  const city = text(formData.get("city")) || null;
+  const state = text(formData.get("state")) || null;
+  const country = text(formData.get("country")) || null;
   if (id) {
     const ok = changed(
       run(
-        `update contacts set account_id = ?, name = ?, title = ?, department = ?, email = ?, phone = ?, location = ?, buying_role = ?, channel = ?, consent = ?, is_primary = ?, updated_at = ?, version = version + 1
-         where id = ? and tenant_id = ? and version = ?`,
+        `update contacts set account_id = ?, name = ?, title = ?, department = ?, email = ?, phone = ?, location = ?, city = ?, state = ?, country = ?, buying_role = ?, channel = ?, consent = ?, is_primary = ?, updated_at = ?, version = version + 1 where id = ? and tenant_id = ? and version = ?`,
         accountId,
         name,
         text(formData.get("title")) || null,
@@ -409,6 +474,9 @@ export async function saveContact(_prev: ActionState, formData: FormData): Promi
         email || null,
         phone || null,
         text(formData.get("location")) || null,
+        city,
+        state,
+        country,
         text(formData.get("buyingRole")) || null,
         text(formData.get("channel")) || "Email",
         consent,
@@ -428,8 +496,7 @@ export async function saveContact(_prev: ActionState, formData: FormData): Promi
   }
   const contactId = nid("con");
   run(
-    `insert into contacts (id, tenant_id, account_id, name, title, department, email, phone, location, buying_role, channel, consent, is_primary, owner_id, created_at, updated_at, version)
-     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `insert into contacts (id, tenant_id, account_id, name, title, department, email, phone, location, city, state, country, buying_role, channel, consent, is_primary, owner_id, created_at, updated_at, version) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
     contactId,
     user.tenantId,
     accountId,
@@ -439,6 +506,9 @@ export async function saveContact(_prev: ActionState, formData: FormData): Promi
     email || null,
     phone || null,
     text(formData.get("location")) || null,
+    city,
+    state,
+    country,
     text(formData.get("buyingRole")) || null,
     text(formData.get("channel")) || "Email",
     consent,
@@ -459,10 +529,14 @@ export async function saveOpportunity(_prev: ActionState, formData: FormData): P
   const id = text(formData.get("id"));
   const name = text(formData.get("name"));
   const accountId = text(formData.get("accountId"));
+  const customerType = text(formData.get("customerType"));
   const amount = numberValue(formData.get("amount"));
   const closeDate = text(formData.get("closeDate"));
   const stageId = text(formData.get("stageId"));
   const fields: Record<string, string> = {};
+  if (!["new", "existing"].includes(customerType)) {
+    fieldError(fields, "customerType", "Choose a valid customer type.");
+  }
   if (!name) fieldError(fields, "name", "Opportunity name is required.");
   const account = one(`select id from accounts where id = ? and tenant_id = ?`, accountId, user.tenantId);
   if (!account) fieldError(fields, "accountId", "Choose an account.");
@@ -490,7 +564,7 @@ export async function saveOpportunity(_prev: ActionState, formData: FormData): P
     if (user.role === "bdm" && previous.ownerId !== user.id) return { error: "That opportunity is not available." };
     const ok = changed(
       run(
-        `update opportunities set name = ?, account_id = ?, contact_id = ?, owner_id = ?, source = ?, stage_id = ?, amount = ?, currency = ?, probability = ?, close_date = ?, service_line = ?, competitors = ?, status = ?, lost_reason = ?, closed_at = ?, updated_at = ?, version = version + 1
+        `update opportunities set name = ?, account_id = ?, contact_id = ?, owner_id = ?, source = ?, stage_id = ?, amount = ?, currency = ?, probability = ?, close_date = ?, service_line = ?, customer_type= ?, competitors = ?, status = ?, lost_reason = ?, closed_at = ?, updated_at = ?, version = version + 1
          where id = ? and tenant_id = ? and version = ?`,
         name,
         accountId,
@@ -503,6 +577,7 @@ export async function saveOpportunity(_prev: ActionState, formData: FormData): P
         probability,
         new Date(closeDate).toISOString(),
         text(formData.get("serviceLine")) || null,
+        customerType,
         text(formData.get("competitors")) || null,
         status,
         lostReason || null,
@@ -551,8 +626,8 @@ export async function saveOpportunity(_prev: ActionState, formData: FormData): P
   const pipeline = one<{ id: string }>(`select id from pipelines where tenant_id = ? and is_default = 1`, user.tenantId);
   const opportunityId = nid("opp");
   run(
-    `insert into opportunities (id, tenant_id, name, account_id, contact_id, owner_id, source, pipeline_id, stage_id, amount, currency, probability, close_date, service_line, competitors, status, lost_reason, closed_at, created_at, updated_at, version)
-     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `insert into opportunities (id, tenant_id, name, account_id, contact_id, owner_id, source, pipeline_id, stage_id, amount, currency, probability, close_date, service_line, customer_type, competitors, status, lost_reason, closed_at, created_at, updated_at, version)
+     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
     opportunityId,
     user.tenantId,
     name,
@@ -567,6 +642,7 @@ export async function saveOpportunity(_prev: ActionState, formData: FormData): P
     probability,
     new Date(closeDate).toISOString(),
     text(formData.get("serviceLine")) || null,
+    customerType,
     text(formData.get("competitors")) || null,
     status,
     lostReason || null,
@@ -574,6 +650,7 @@ export async function saveOpportunity(_prev: ActionState, formData: FormData): P
     now,
     now,
   );
+
   run(
     `insert into stage_history (id, tenant_id, opportunity_id, from_stage, to_stage, actor_id, created_at) values (?, ?, ?, null, ?, ?, ?)`,
     nid("hist"),

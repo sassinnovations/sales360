@@ -49,6 +49,7 @@ export default async function OpportunityDetail({
           fields={[
             { name: "name", label: "Name", defaultValue: String(opp.name) },
             { name: "accountId", label: "Account", type: "select", defaultValue: String(opp.accountId), options: accountsFor(user).map((account) => ({ value: account.id, label: account.name })) },
+            { name: "customerType", label: "Customer Type", type: "select", required: true, defaultValue: String(opp.customerType ?? "new"), options: [ { value: "new", label: "New Customer" }, { value: "existing", label: "Existing Customer" },],},
             { name: "ownerId", label: "Owner", type: "select", defaultValue: String(opp.ownerId ?? ""), options: usersInTenant(user.tenantId).map((person) => ({ value: person.id, label: person.name })) },
             { name: "stageId", label: "Stage", type: "select", defaultValue: String(opp.stageId), options: stages.map((stage) => ({ value: stage.id, label: stage.name })) },
             { name: "amount", label: "Amount", type: "number", defaultValue: String(opp.amount) },

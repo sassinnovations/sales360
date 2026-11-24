@@ -26,9 +26,9 @@ import { fieldError, isEmail, isWebsite, text } from "@/lib/validate";
 import { slugify } from "@/lib/format";
 
 const STAGES: [string, number, string][] = [
-  ["Qualification", 10, "open"],
   ["Discovery", 25, "open"],
-  ["Proposal", 50, "open"],
+  ["Value Proposition", 50, "open"],
+  ["Qualification", 10, "open"],
   ["Negotiation", 75, "open"],
   ["Closed Won", 100, "won"],
   ["Closed Lost", 0, "lost"],

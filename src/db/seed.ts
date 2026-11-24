@@ -81,7 +81,7 @@ export function seedIfEmpty(db: DatabaseSync) {
       ["lead_sources", ["Website", "Referral", "Campaign", "Partner", "Event", "Inbound call"]],
       ["industries", ["Banking", "Healthcare", "Logistics", "Retail", "Insurance", "Technology"]],
       ["lost_reasons", ["Budget", "Timing", "Competitor", "No decision", "Poor fit"]],
-      ["service_lines", ["Application services", "Staffing", "Managed services", "Data & AI"]],
+      ["service_lines", ["IT Services and Consulting", "Staffing", "Managed services","Data & AI"]],
       ["account_types", ["Prospect", "Customer", "Partner"]],
     ];
     for (const [key, value] of lists) {
@@ -93,9 +93,9 @@ export function seedIfEmpty(db: DatabaseSync) {
       TENANT,
     );
     const stages: [string, string, number, number, string][] = [
-      ["stg_qual", "Qualification", 10, 1, "open"],
-      ["stg_disc", "Discovery", 25, 2, "open"],
-      ["stg_prop", "Proposal", 50, 3, "open"],
+      ["stg_disc", "Discovery", 25, 1, "open"],
+      ["stg_prop", "Value Proposition", 50, 2, "open"],
+      ["stg_qual", "Qualification", 10, 3, "open"],
       ["stg_neg", "Negotiation", 75, 4, "open"],
       ["stg_won", "Closed Won", 100, 5, "won"],
       ["stg_lost", "Closed Lost", 0, 6, "lost"],
@@ -206,9 +206,9 @@ export function seedIfEmpty(db: DatabaseSync) {
     }
 
     const opps: [string, string, string, string, string, string, number, string, string, string, string, string | null][] = [
-      ["opp_meridian", "Core banking modernization", "acc_meridian", "con_helen", LEAH, "stg_prop", 4800000, iso(30), "Application services", "open", "Referral", null],
-      ["opp_lumen", "Patient portal rebuild", "acc_lumen", "con_farah", LEAH, "stg_disc", 2200000, iso(40), "Application services", "open", "Inbound call", null],
-      ["opp_orbit", "Warehouse platform", "acc_orbit", "con_chris", ARUN, "stg_neg", 6100000, iso(14), "Application services", "open", "Partner", null],
+      ["opp_meridian", "Core banking modernization", "acc_meridian", "con_helen", LEAH, "stg_prop", 4800000, iso(30), "IT Services and Consulting", "open", "Referral", null],
+      ["opp_lumen", "Patient portal rebuild", "acc_lumen", "con_farah", LEAH, "stg_disc", 2200000, iso(40), "IT Services and Consulting", "open", "Inbound call", null],
+      ["opp_orbit", "Warehouse platform", "acc_orbit", "con_chris", ARUN, "stg_neg", 6100000, iso(14), "IT Services and Consulting", "open", "Partner", null],
       ["opp_kite", "Store systems rollout", "acc_kite", "con_meera", LEAH, "stg_qual", 900000, iso(50), "Staffing", "open", "Partner", null],
       ["opp_harbor", "Claims copilot", "acc_harbor", "con_paul", ARUN, "stg_won", 3500000, iso(-20), "Data & AI", "won", "Referral", null],
       ["opp_soc", "Managed SOC retainer", "acc_meridian", "con_helen", LEAH, "stg_lost", 1200000, iso(-8), "Managed services", "lost", "Campaign", "Budget"],
@@ -242,7 +242,7 @@ export function seedIfEmpty(db: DatabaseSync) {
         `hist_${id}`,
         TENANT,
         id,
-        stage === "stg_qual" ? "Qualification" : stage === "stg_disc" ? "Discovery" : stage === "stg_prop" ? "Proposal" : stage === "stg_neg" ? "Negotiation" : stage === "stg_won" ? "Closed Won" : "Closed Lost",
+        stage === "stg_qual" ? "Qualification" : stage === "stg_disc" ? "Discovery" : stage === "stg_prop" ? "Value Proposition" : stage === "stg_neg" ? "Negotiation" : stage === "stg_won" ? "Closed Won" : "Closed Lost",
         owner,
         iso(-3),
       );
@@ -409,7 +409,7 @@ export function seedIfEmpty(db: DatabaseSync) {
       `insert into workflow_rules (id, tenant_id, name, trigger, condition_json, action_type, action_json, active, created_at)
        values ('rule_proposal', ?, 'Follow up when a deal reaches Proposal', 'opportunity.stage', ?, 'create_task', ?, 1, ?)`,
       TENANT,
-      JSON.stringify({ toStage: "Proposal" }),
+      JSON.stringify({ toStage: "Value Proposition" }),
       JSON.stringify({ subject: "Prepare proposal follow-up", dueInDays: 2 }),
       now,
     );
