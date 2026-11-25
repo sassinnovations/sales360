@@ -811,7 +811,10 @@ export function campaignDetail(user: SessionUser, id: string) {
   const campaign = one<Record<string, unknown>>(`select * from campaigns where id = ? and tenant_id = ?`, id, user.tenantId);
   if (!campaign) return null;
   const members = all(
-    `select m.status, c.name, c.email, c.consent from campaign_members m join contacts c on c.id = m.contact_id where m.campaign_id = ?`,
+    `select m.id, m.status, m.stage, c.name, c.email, c.consent
+     from campaign_members m
+     join contacts c on c.id = m.contact_id
+     where m.campaign_id = ?`,
     id,
   );
   return { campaign, members };

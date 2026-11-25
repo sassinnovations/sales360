@@ -369,6 +369,7 @@ create table if not exists contracts (
   currency text,
   owner_id text,
   renewal_lead_days integer not null default 30,
+  renewal_status text not null default 'Not Started',
   notes text,
   created_at text not null,
   updated_at text not null,
@@ -423,7 +424,8 @@ create table if not exists campaign_members (
   id text primary key,
   campaign_id text not null,
   contact_id text not null,
-  status text not null
+  status text not null,
+  stage text not null default 'New'
 );
 
 create table if not exists workflow_rules (

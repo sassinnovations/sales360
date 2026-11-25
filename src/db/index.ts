@@ -1,3 +1,4 @@
+
 import { DatabaseSync } from "node:sqlite";
 import fs from "fs";
 import path from "path";
@@ -26,6 +27,25 @@ function openDatabase() {
 }
 
 function ensureLeadColumns(db: DatabaseSync) {
+  const campaignColumns = new Set(
+    (db.prepare("pragma table_info(campaign_members)").all() as { name: string }[]).map(
+      (column) => column.name,
+    ),
+  );
+
+  if (!campaignColumns.has("stage")) {
+    db.exec("alter table campaign_members add column stage text not null default 'New'");
+  }
+  const contractColumns = new Set(
+    (db.prepare("pragma table_info(contracts)").all() as { name: string }[]).map(
+      (column) => column.name,
+    ),
+  );
+
+  if (!contractColumns.has("renewal_status")) {
+    db.exec("alter table contracts add column renewal_status text not null default 'Not Started'");
+  }
+
   const columns = new Set(
     (db.prepare("pragma table_info(leads)").all() as { name: string }[]).map((column) => column.name),
   );
